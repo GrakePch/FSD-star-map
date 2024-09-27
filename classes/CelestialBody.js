@@ -63,6 +63,8 @@ export default class CelestialBody {
     this.label = this.#createLabel();
     this.meshBody.add(this.label);
 
+    this.#createElevationLine()
+
     if (this.parentBody) {
       this.parentBody.meshGroup.attach(this.meshGroup);
     }
@@ -110,12 +112,22 @@ export default class CelestialBody {
     element.textContent = this.name;
     element.className = "label";
     element.addEventListener("pointerdown", () => {
-      Ctrls.controls.target = this.meshBody.position;
+      Ctrls.controls.target = this.meshBody.position.clone();
     });
     const labelObj = new CSS2DObject(element);
     labelObj.position.set(0, this.bodyRadius * 1.5, 0);
     labelObj.center.set(0.5, 1);
     return labelObj;
+  }
+
+  #createElevationLine() {
+    const points = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -this.coordinates.y, 0)];
+
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+
+    const material = new THREE.LineBasicMaterial({ color: 0x222222 });
+    const elevationLine = new THREE.Line(geometry, material);
+    this.meshBody.add(elevationLine);
   }
 
   #loadMaps() {
