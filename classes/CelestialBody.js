@@ -2,6 +2,7 @@ import DB from "./Database.js";
 import * as THREE from "three";
 import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 import Ctrls from "./Controls.js";
+import { euclideanDist } from "../utils.js";
 
 export default class CelestialBody {
   constructor(name, type, ordinal, parentBody, parentStar, coordinates, rotationQuanternion, bodyRadius, rotationRate, rotationCorrection, orbitAngle, orbitalRadius, themeColor) {
@@ -23,6 +24,25 @@ export default class CelestialBody {
     this.angularRotationRate = 6 / this.rotationRate;
 
     this.childBodies = Array();
+
+    //TODO: consider parent as [0, 0, 0], which is a temporary
+    // console.log(this.name)
+    // console.log(this.coordinates.y)
+    // console.log(euclideanDist({
+    //   x: this.coordinates.x,
+    //   y: this.coordinates.y,
+    //   z: this.coordinates.z,
+    // }))
+    this.orbitalInclination = THREE.MathUtils.radToDeg(
+      Math.atan(
+        this.coordinates.y /
+          euclideanDist({
+            x: this.coordinates.x,
+            y: 0,
+            z: this.coordinates.z,
+          })
+      )
+    );
 
     DB.bodies.push(this);
   }
@@ -54,6 +74,13 @@ export default class CelestialBody {
 
       this.meshOrbit = this.#createMeshOrbit(this.parentBody.getPosition(), this.orbitalRadius, 0x222222);
       this.meshGroup.attach(this.meshOrbit);
+    } else if (this.type === "Jump Point") {
+      this.meshBody = new THREE.Object3D();
+      this.meshBody.position.set(...this.getPosition());
+      this.meshGroup.attach(this.meshBody);
+
+      this.meshOrbit = this.#createMeshOrbit([0, 0, 0], this.orbitalRadius, 0x404040);
+      this.meshGroup.attach(this.meshOrbit);
     } else {
       this.meshBody = new THREE.Object3D();
       this.meshBody.position.set(...this.getPosition());
@@ -63,7 +90,7 @@ export default class CelestialBody {
     this.label = this.#createLabel();
     this.meshBody.add(this.label);
 
-    this.#createElevationLine()
+    this.#createElevationLine();
 
     if (this.parentBody) {
       this.parentBody.meshGroup.attach(this.meshGroup);
@@ -104,6 +131,13 @@ export default class CelestialBody {
     const meshOrbit = new THREE.LineLoop(geoCircle, matCircle);
     meshOrbit.rotateX(Math.PI / 2);
     meshOrbit.position.set(...position);
+    
+    if (this.orbitalInclination != 0) {
+      let rotAxis = new THREE.Vector3(this.coordinates.x, this.coordinates.y, this.coordinates.z);
+      rotAxis.cross(new THREE.Vector3(0, this.coordinates.y, 0)).normalize();
+      meshOrbit.rotateOnWorldAxis(rotAxis, (this.coordinates.y > 0 ? 1 : -1) * THREE.MathUtils.degToRad(this.orbitalInclination));
+    }
+
     return meshOrbit;
   }
 

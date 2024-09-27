@@ -66,7 +66,7 @@ class Database {
         {
           x: parseFloat(data.coordinateX),
           y: parseFloat(data.coordinateZ),
-          z: parseFloat(-data.coordinateY),
+          z: -parseFloat(data.coordinateY),
         },
         {
           w: parseFloat(data.quaternionW),
@@ -106,7 +106,7 @@ class Database {
     for (const body of DB.bodies)
       if (isNaN(body.orbitRadius)) {
         if (body.type === "Jump Point") {
-          body.orbitalRadius = euclideanDist(body.coordinates, body.parentBody.coordinates);
+          body.orbitalRadius = euclideanDist(body.coordinates);
         }
         if (body.type === "Lagrange Point") {
           body.orbitalRadius = euclideanDist(body.coordinates);
