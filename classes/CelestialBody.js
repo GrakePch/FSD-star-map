@@ -32,66 +32,39 @@ export default class CelestialBody {
 
     if (this.type === "Star") {
       this.meshBody = this.#createMeshSphere(this.getPosition(), this.bodyRadius, 0xffffaa, 0xffffaa);
-      this.meshGroup.add(this.meshBody);
+      this.meshGroup.attach(this.meshBody);
 
       const light = new THREE.PointLight(0xffffff, 5, 0, 0);
       this.meshBody.add(light);
-    }
-    if (this.type === "Planet") {
+    } else if (this.type === "Planet") {
       const color = `rgb(${this.themeColor.r}, ${this.themeColor.g}, ${this.themeColor.b})`;
-      const textureLoader = new THREE.TextureLoader();
 
-      textureLoader.load(
-        `./public/textures/bodies-hd/${this.name.toLowerCase()}.webp`,
-        (t) => {
-          t.colorSpace = THREE.SRGBColorSpace;
-          this.meshBody.material.map = t;
-          this.meshBody.material.color.set(0xffffff);
-          this.meshBody.material.needsUpdate = true;
-        },
-        undefined,
-        (err) => console.error(err)
-      );
-
-      textureLoader.load(
-        `./public/textures/bodies-reflection/${this.name.toLowerCase()}.webp`,
-        (t) => {
-          t.colorSpace = THREE.SRGBColorSpace;
-          this.meshBody.material.roughnessMap = t;
-          this.meshBody.material.needsUpdate = true;
-        },
-        undefined,
-        (err) => undefined
-      );
+      this.#loadMaps();
 
       this.meshBody = this.#createMeshSphere(this.getPosition(), this.bodyRadius, color);
-      this.meshGroup.add(this.meshBody);
+      this.meshGroup.attach(this.meshBody);
 
       this.meshOrbit = this.#createMeshOrbit([0, 0, 0], this.orbitalRadius, color);
-      this.meshGroup.add(this.meshOrbit);
-
-      const element = document.createElement("div");
-      element.textContent = this.name;
-      element.className = "label";
-      element.addEventListener("pointerdown", () => {
-        console.log(this.name);
-        console.log(Ctrls.controls.target = this.meshBody.position)
-      });
-      this.label = new CSS2DObject(element);
-      this.label.position.set(0, this.bodyRadius * 1.5, 0);
-      this.label.center.set(0.5, 1);
-      this.meshBody.add(this.label);
-    }
-    if (this.type === "Moon") {
+      this.meshGroup.attach(this.meshOrbit);
+    } else if (this.type === "Moon") {
       this.meshBody = this.#createMeshSphere(this.getPosition(), this.bodyRadius, 0x222222);
-      this.meshGroup.add(this.meshBody);
+      this.meshGroup.attach(this.meshBody);
+
+      this.#loadMaps();
 
       this.meshOrbit = this.#createMeshOrbit(this.parentBody.getPosition(), this.orbitalRadius, 0x222222);
-      this.meshGroup.add(this.meshOrbit);
+      this.meshGroup.attach(this.meshOrbit);
+    } else {
+      this.meshBody = new THREE.Object3D();
+      this.meshBody.position.set(...this.getPosition());
+      this.meshGroup.attach(this.meshBody);
     }
 
+    this.label = this.#createLabel();
+    this.meshBody.add(this.label);
+
     if (this.parentBody) {
-      this.parentBody.meshGroup.add(this.meshGroup);
+      this.parentBody.meshGroup.attach(this.meshGroup);
     }
   }
 
@@ -130,5 +103,44 @@ export default class CelestialBody {
     meshOrbit.rotateX(Math.PI / 2);
     meshOrbit.position.set(...position);
     return meshOrbit;
+  }
+
+  #createLabel() {
+    const element = document.createElement("div");
+    element.textContent = this.name;
+    element.className = "label";
+    element.addEventListener("pointerdown", () => {
+      Ctrls.controls.target = this.meshBody.position;
+    });
+    const labelObj = new CSS2DObject(element);
+    labelObj.position.set(0, this.bodyRadius * 1.5, 0);
+    labelObj.center.set(0.5, 1);
+    return labelObj;
+  }
+
+  #loadMaps() {
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.load(
+      `./public/textures/bodies-hd/${this.name.toLowerCase()}.webp`,
+      (t) => {
+        t.colorSpace = THREE.SRGBColorSpace;
+        this.meshBody.material.map = t;
+        this.meshBody.material.color.set(0xffffff);
+        this.meshBody.material.needsUpdate = true;
+      },
+      undefined,
+      (err) => console.error(err)
+    );
+
+    textureLoader.load(
+      `./public/textures/bodies-reflection/${this.name.toLowerCase()}.webp`,
+      (t) => {
+        t.colorSpace = THREE.SRGBColorSpace;
+        this.meshBody.material.roughnessMap = t;
+        this.meshBody.material.needsUpdate = true;
+      },
+      undefined,
+      (err) => undefined
+    );
   }
 }

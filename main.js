@@ -20,11 +20,11 @@ Ctrls.init(camera, cssRenderer.domElement);
 const controls = Ctrls.controls;
 
 // Draw the ecliptic plane
-const geoCircle = new THREE.CircleGeometry(100000000, 100);
-const matCircle = new THREE.MeshBasicMaterial({ color: 0x111122, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
-const zeroLevel = new THREE.Mesh(geoCircle, matCircle);
-zeroLevel.rotateX(Math.PI / 2);
-scene.add(zeroLevel);
+// const geoCircle = new THREE.CircleGeometry(100000000, 100);
+// const matCircle = new THREE.MeshBasicMaterial({ color: 0x111122, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
+// const zeroLevel = new THREE.Mesh(geoCircle, matCircle);
+// zeroLevel.rotateX(Math.PI / 2);
+// scene.add(zeroLevel);
 
 camera.position.set(0, 70000000, 0);
 controls.update();
