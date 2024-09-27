@@ -66,7 +66,7 @@ class Database {
         {
           x: parseFloat(data.coordinateX),
           y: parseFloat(data.coordinateZ),
-          z: parseFloat(data.coordinateY),
+          z: parseFloat(-data.coordinateY),
         },
         {
           w: parseFloat(data.quaternionW),

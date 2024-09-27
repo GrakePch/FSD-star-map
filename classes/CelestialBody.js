@@ -1,6 +1,7 @@
 import DB from "./Database.js";
 import * as THREE from "three";
-import { CSS3DObject } from "three/addons/renderers/CSS3DRenderer.js";
+import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
+import Ctrls from "./Controls.js";
 
 export default class CelestialBody {
   constructor(name, type, ordinal, parentBody, parentStar, coordinates, rotationQuanternion, bodyRadius, rotationRate, rotationCorrection, orbitAngle, orbitalRadius, themeColor) {
@@ -69,17 +70,17 @@ export default class CelestialBody {
       this.meshOrbit = this.#createMeshOrbit([0, 0, 0], this.orbitalRadius, color);
       this.meshGroup.add(this.meshOrbit);
 
-      
-    const element = document.createElement("p");
-    element.textContent = "Moon";
-    element.style.width = "200px";
-    element.style.height = "200px";
-    element.style.backgroundColor = "rgba(255, 0, 0, 0.5)";
-
-    const cssObject = new CSS3DObject(element);
-    cssObject.position.set(0, 0, 0);
-    this.label = cssObject;
-    this.meshBody.add(this.label);
+      const element = document.createElement("div");
+      element.textContent = this.name;
+      element.className = "label";
+      element.addEventListener("pointerdown", () => {
+        console.log(this.name);
+        console.log(Ctrls.controls.target = this.meshBody.position)
+      });
+      this.label = new CSS2DObject(element);
+      this.label.position.set(0, this.bodyRadius * 1.5, 0);
+      this.label.center.set(0.5, 1);
+      this.meshBody.add(this.label);
     }
     if (this.type === "Moon") {
       this.meshBody = this.#createMeshSphere(this.getPosition(), this.bodyRadius, 0x222222);
@@ -92,7 +93,6 @@ export default class CelestialBody {
     if (this.parentBody) {
       this.parentBody.meshGroup.add(this.meshGroup);
     }
-
   }
 
   createChildrenMesh() {

@@ -1,0 +1,17 @@
+body {
+    margin: 0;
+}
+
+.label {
+    color: #fff;
+    font-family: sans-serif;
+    font-size: 12px;
+    background-color: #80808030;
+    padding: .25em;
+    cursor: pointer;
+    transition: font-size .2s;
+}
+
+.label:hover {
+    font-size: 14px;
+}
