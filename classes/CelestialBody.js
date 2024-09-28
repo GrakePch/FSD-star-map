@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 import Ctrls from "./Controls.js";
 import { euclideanDist } from "../utils.js";
+import UI from "./UI.js";
 
 export default class CelestialBody {
   constructor(name, type, ordinal, parentBody, parentStar, coordinates, rotationQuanternion, bodyRadius, rotationRate, rotationCorrection, orbitAngle, orbitalRadius, themeColor) {
@@ -103,7 +104,7 @@ export default class CelestialBody {
   }
 
   #createMeshSphere(color, emissive) {
-    const geometry = new THREE.SphereGeometry(this.bodyRadius, 32, 16);
+    const geometry = new THREE.SphereGeometry(this.bodyRadius, 100, 50);
     const material = new THREE.MeshStandardMaterial({ color: color, emissive: emissive ? emissive : null });
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.set(...this.getPosition());
@@ -155,7 +156,7 @@ export default class CelestialBody {
   }
 
   #loadMaps() {
-    // return;
+    return;
     const textureLoader = new THREE.TextureLoader();
     textureLoader.load(
       `./public/textures/bodies-hd/${this.name.toLowerCase()}.webp`,
@@ -191,6 +192,7 @@ export default class CelestialBody {
 
       const elButton = el.firstChild;
       elButton.addEventListener("click", this.getZoomInTheBody());
+      this.DOMButton = elButton;
 
       const elAccordion = elButton.nextElementSibling;
       elAccordion.addEventListener("click", function () {
@@ -214,6 +216,7 @@ export default class CelestialBody {
 
       const elButton = el.firstChild;
       elButton.addEventListener("click", this.getZoomInTheBody());
+      this.DOMButton = elButton;
     }
 
     for (const childBody of this.childBodies) {
@@ -223,6 +226,11 @@ export default class CelestialBody {
 
   getZoomInTheBody() {
     return () => {
+      UI.updateControlTarget(this);
+      UI.controlTargetDOMButton?.classList.remove("targeting");
+      UI.controlTargetDOMButton = this.DOMButton;
+      UI.controlTargetDOMButton.classList.add("targeting");
+
       if (this.type === "Star") {
         Ctrls.camera.position.set(0, 70000000, 0);
       } else {
