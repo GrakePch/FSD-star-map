@@ -38,6 +38,8 @@ async function init() {
   DB.bodies[0].createMesh();
   DB.bodies[0].createChildrenMesh();
   DB.bodies[0].addToScene(scene);
+
+  DB.bodies[0].createNavDOMAt(document.querySelector("#nav-panel"), 0);
 }
 init();
 

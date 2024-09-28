@@ -7,7 +7,10 @@ class Controls {
   }
 
   init(camera, domElement) {
+    this.camera = camera;
     this.controls = new OrbitControls(camera, domElement);
+    this.controls.enablePan = false;
+    this.controls.maxDistance = 200000000;
   }
 
   update() {

@@ -136,9 +136,7 @@ export default class CelestialBody {
     const element = document.createElement("div");
     element.textContent = this.name;
     element.className = "label";
-    element.addEventListener("pointerdown", () => {
-      Ctrls.controls.target = this.meshBody.position.clone();
-    });
+    element.addEventListener("pointerdown", this.getZoomInTheBody());
     const labelObj = new CSS2DObject(element);
     labelObj.position.set(0, this.bodyRadius * 1.5, 0);
     labelObj.center.set(0.5, 1);
@@ -157,6 +155,7 @@ export default class CelestialBody {
   }
 
   #loadMaps() {
+    // return;
     const textureLoader = new THREE.TextureLoader();
     textureLoader.load(
       `./public/textures/bodies-hd/${this.name.toLowerCase()}.webp`,
@@ -180,5 +179,64 @@ export default class CelestialBody {
       undefined,
       (err) => undefined
     );
+  }
+
+  createNavDOMAt(element, layer) {
+    var wrapper = document.createElement("div");
+
+    if (layer === 1 && this.childBodies.length > 0) {
+      wrapper.innerHTML = `<div class="indent-1"><button>${this.name}</button><button class="accordion" onclick></button></div>`;
+      var el = wrapper.firstChild;
+      element.insertAdjacentElement("beforeend", el);
+
+      const elButton = el.firstChild;
+      elButton.addEventListener("click", this.getZoomInTheBody());
+
+      const elAccordion = elButton.nextElementSibling;
+      elAccordion.addEventListener("click", function () {
+        this.classList.toggle("on");
+        var childGroup = this.parentElement.nextElementSibling;
+        if (this.classList.contains("on")) {
+          childGroup.style.maxHeight = childGroup.scrollHeight + "px";
+        } else {
+          childGroup.style.maxHeight = 0;
+        }
+      });
+
+      wrapper.innerHTML = `<div class="group"></div>`;
+      var el = wrapper.firstChild;
+      element.insertAdjacentElement("beforeend", el);
+      element = el;
+    } else {
+      wrapper.innerHTML = `<div class="indent-${layer}"><button>${this.name}</button></div>`;
+      var el = wrapper.firstChild;
+      element.insertAdjacentElement("beforeend", el);
+
+      const elButton = el.firstChild;
+      elButton.addEventListener("click", this.getZoomInTheBody());
+    }
+
+    for (const childBody of this.childBodies) {
+      childBody.createNavDOMAt(element, layer + 1);
+    }
+  }
+
+  getZoomInTheBody() {
+    return () => {
+      if (this.type === "Star") {
+        Ctrls.camera.position.set(0, 70000000, 0);
+      } else {
+        const camPos = new THREE.Vector3(...this.getPosition());
+        const direction = camPos
+          .clone()
+          .normalize()
+          .multiplyScalar(Math.max(this.bodyRadius, 600) * 3);
+        camPos.sub(direction);
+        Ctrls.camera.position.set(...camPos);
+      }
+      Ctrls.controls.target.set(...this.meshBody.position);
+
+      Ctrls.controls.minDistance = Math.max(this.bodyRadius, 100) * 1.1;
+    };
   }
 }
