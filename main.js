@@ -2,6 +2,7 @@ import * as THREE from "three";
 import DB from "./classes/Database.js";
 import { CSS2DRenderer } from "three/addons/renderers/CSS2DRenderer.js";
 import Ctrls from "./classes/Controls.js";
+import { getBodyByName } from "./utils.js";
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -29,17 +30,19 @@ const controls = Ctrls.controls;
 camera.position.set(0, 70000000, 0);
 controls.update();
 
+var rootBody = null;
 async function init() {
   await DB.createDatabase();
-  console.log(DB.bodies[0]);
 
   window.addEventListener("resize", onWindowResize);
 
-  DB.bodies[0].createMesh();
-  DB.bodies[0].createChildrenMesh();
-  DB.bodies[0].addToScene(scene);
+  rootBody = getBodyByName("Stanton");
+  console.log(rootBody);
+  rootBody.createMesh();
+  rootBody.createChildrenMesh();
+  rootBody.addToScene(scene);
 
-  DB.bodies[0].createNavDOMAt(document.querySelector("#nav-panel"), 0);
+  rootBody.createNavDOMAt(document.querySelector("#nav-panel"), 0);
 }
 init();
 
@@ -51,9 +54,8 @@ function onWindowResize() {
 }
 
 function animate() {
-  // console.log(camera.position)
-  if (DB.bodies[0]) {
-    // DB.bodies[0].meshGroup.rotation.x += 0.01;
+  if (rootBody) {
+    rootBody.updateLabel();
   }
   controls.update();
   renderer.render(scene, camera);

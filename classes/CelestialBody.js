@@ -247,4 +247,32 @@ export default class CelestialBody {
       Ctrls.controls.minDistance = Math.max(this.bodyRadius, 100) * 1.1;
     };
   }
+
+  updateLabel() {
+    if (this.parentBody && UI.controlTarget !== this) {
+      const labelEle = this.label.element;
+      const labelRect = labelEle.getBoundingClientRect();
+      const labelCenter2D = [labelRect.x + 0.5 * labelRect.width, labelRect.y + 0.5 * labelRect.height];
+
+      const labelParentEle = this.parentBody.label.element;
+      const labelParentRect = labelParentEle.getBoundingClientRect();
+      const labelParentCenter2D = [labelParentRect.x + 0.5 * labelParentRect.width, labelParentRect.y + 0.5 * labelParentRect.height];
+
+      const thresholdDistX = (labelParentRect.width + labelRect.width) / 2;
+      const thresholdDistY = (labelParentRect.height + labelRect.height) / 2;
+
+      if (Math.abs(labelCenter2D[0] - labelParentCenter2D[0]) < thresholdDistX && Math.abs(labelCenter2D[1] - labelParentCenter2D[1]) < thresholdDistY) {
+        labelEle.classList.add("hide");
+      } else {
+        labelEle.classList.remove("hide");
+      }
+    } else {
+      const labelEle = this.label.element;
+      labelEle.classList.remove("hide");
+    }
+
+    for (const childBody of this.childBodies) {
+      childBody.updateLabel();
+    }
+  }
 }
