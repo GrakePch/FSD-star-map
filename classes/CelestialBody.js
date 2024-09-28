@@ -50,45 +50,33 @@ export default class CelestialBody {
   createMesh() {
     this.meshGroup = new THREE.Group();
 
-    if (this.type === "Star") {
-      this.meshBody = this.#createMeshSphere(this.getPosition(), this.bodyRadius, 0xffffaa, 0xffffaa);
-      this.meshGroup.attach(this.meshBody);
+    this.meshBody = new THREE.Object3D();
+    this.meshBody.position.set(...this.getPosition());
+    this.meshGroup.attach(this.meshBody);
 
+    if (this.type === "Star") {
+      this.#createMeshSphere(0xffffaa, 0xffffaa);
       const light = new THREE.PointLight(0xffffff, 5, 0, 0);
       this.meshBody.add(light);
-    } else if (this.type === "Planet") {
+    }
+    if (this.type === "Planet") {
+      this.#loadMaps();
+      this.#createMeshSphere();
       const color = `rgb(${this.themeColor.r}, ${this.themeColor.g}, ${this.themeColor.b})`;
-
+      this.#createMeshOrbit([0, 0, 0], color);
+    }
+    if (this.type === "Moon") {
+      this.#createMeshSphere(0x404040);
       this.#loadMaps();
-
-      this.meshBody = this.#createMeshSphere(this.getPosition(), this.bodyRadius, color);
-      this.meshGroup.attach(this.meshBody);
-
-      this.meshOrbit = this.#createMeshOrbit([0, 0, 0], this.orbitalRadius, color);
+      this.#createMeshOrbit(this.parentBody.getPosition(), 0x404040);
       this.meshGroup.attach(this.meshOrbit);
-    } else if (this.type === "Moon") {
-      this.meshBody = this.#createMeshSphere(this.getPosition(), this.bodyRadius, 0x222222);
-      this.meshGroup.attach(this.meshBody);
-
-      this.#loadMaps();
-
-      this.meshOrbit = this.#createMeshOrbit(this.parentBody.getPosition(), this.orbitalRadius, 0x222222);
+    }
+    if (this.type === "Jump Point") {
+      this.#createMeshOrbit([0, 0, 0], 0x404040);
       this.meshGroup.attach(this.meshOrbit);
-    } else if (this.type === "Jump Point") {
-      this.meshBody = new THREE.Object3D();
-      this.meshBody.position.set(...this.getPosition());
-      this.meshGroup.attach(this.meshBody);
-
-      this.meshOrbit = this.#createMeshOrbit([0, 0, 0], this.orbitalRadius, 0x404040);
-      this.meshGroup.attach(this.meshOrbit);
-    } else {
-      this.meshBody = new THREE.Object3D();
-      this.meshBody.position.set(...this.getPosition());
-      this.meshGroup.attach(this.meshBody);
     }
 
-    this.label = this.#createLabel();
-    this.meshBody.add(this.label);
+    this.#createLabel();
 
     this.#createElevationLine();
 
@@ -114,16 +102,18 @@ export default class CelestialBody {
     return Array.from(Object.values(this.coordinates));
   }
 
-  #createMeshSphere(position, radius, color, emissive) {
-    const geometry = new THREE.SphereGeometry(radius, 32, 16);
+  #createMeshSphere(color, emissive) {
+    const geometry = new THREE.SphereGeometry(this.bodyRadius, 32, 16);
     const material = new THREE.MeshStandardMaterial({ color: color, emissive: emissive ? emissive : null });
     const sphere = new THREE.Mesh(geometry, material);
-    sphere.position.set(...position);
-    return sphere;
+    sphere.position.set(...this.getPosition());
+
+    this.meshBody = sphere;
+    this.meshGroup.attach(this.meshBody);
   }
 
-  #createMeshOrbit(position, radius, color) {
-    const geoCircle = new THREE.CircleGeometry(radius, 2000);
+  #createMeshOrbit(position, color) {
+    const geoCircle = new THREE.CircleGeometry(this.orbitalRadius, 2000);
     const itemSize = 3;
     geoCircle.setAttribute("position", new THREE.BufferAttribute(geoCircle.attributes.position.array.slice(itemSize, geoCircle.attributes.position.array.length - itemSize), itemSize));
     geoCircle.index = null;
@@ -131,14 +121,15 @@ export default class CelestialBody {
     const meshOrbit = new THREE.LineLoop(geoCircle, matCircle);
     meshOrbit.rotateX(Math.PI / 2);
     meshOrbit.position.set(...position);
-    
+
     if (this.orbitalInclination != 0) {
       let rotAxis = new THREE.Vector3(this.coordinates.x, this.coordinates.y, this.coordinates.z);
       rotAxis.cross(new THREE.Vector3(0, this.coordinates.y, 0)).normalize();
       meshOrbit.rotateOnWorldAxis(rotAxis, (this.coordinates.y > 0 ? 1 : -1) * THREE.MathUtils.degToRad(this.orbitalInclination));
     }
 
-    return meshOrbit;
+    this.meshOrbit = meshOrbit;
+    this.meshGroup.attach(this.meshOrbit);
   }
 
   #createLabel() {
@@ -151,16 +142,17 @@ export default class CelestialBody {
     const labelObj = new CSS2DObject(element);
     labelObj.position.set(0, this.bodyRadius * 1.5, 0);
     labelObj.center.set(0.5, 1);
-    return labelObj;
+
+    this.label = labelObj;
+    this.meshBody.add(this.label);
   }
 
   #createElevationLine() {
     const points = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -this.coordinates.y, 0)];
-
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
-
     const material = new THREE.LineBasicMaterial({ color: 0x222222 });
     const elevationLine = new THREE.Line(geometry, material);
+
     this.meshBody.add(elevationLine);
   }
 
