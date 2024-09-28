@@ -4,6 +4,7 @@ import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 import Ctrls from "./Controls.js";
 import { euclideanDist } from "../utils.js";
 import UI from "./UI.js";
+import { icon } from "../icons.js";
 
 export default class CelestialBody {
   constructor(name, type, ordinal, parentBody, parentStar, coordinates, rotationQuanternion, bodyRadius, rotationRate, rotationCorrection, orbitAngle, orbitalRadius, themeColor) {
@@ -186,7 +187,14 @@ export default class CelestialBody {
     var wrapper = document.createElement("div");
 
     if (layer === 1 && this.childBodies.length > 0) {
-      wrapper.innerHTML = `<div class="indent-1"><button>${this.name}</button><button class="accordion" onclick></button></div>`;
+      wrapper.innerHTML = `<div class="indent-1 ${this.type.split(" ").join("_")}"><button><div class="thumbnail" style="background-image: url('public/thumbnails/${this.name}.png')"></div>
+        <div>
+          <p>${this.name}</p>
+          <p class="sub">${this.type}</p>
+        </div>
+      </button>
+      <button class="accordion" onclick></button>
+      </div>`;
       var el = wrapper.firstChild;
       element.insertAdjacentElement("beforeend", el);
 
@@ -210,13 +218,27 @@ export default class CelestialBody {
       element.insertAdjacentElement("beforeend", el);
       element = el;
     } else {
-      wrapper.innerHTML = `<div class="indent-${layer}"><button>${this.name}</button></div>`;
+      wrapper.innerHTML = `<div class="indent-${layer} ${this.type.split(" ").join("_")}"><button><div class="thumbnail" style="background-image: url('public/thumbnails/${this.name}.png')"></div>
+          <div>
+            <p>${this.name}</p>
+            <p class="sub">${this.type}</p>
+          </div>
+        </button>
+      </div>`;
       var el = wrapper.firstChild;
       element.insertAdjacentElement("beforeend", el);
 
       const elButton = el.firstChild;
       elButton.addEventListener("click", this.getZoomInTheBody());
       this.DOMButton = elButton;
+    }
+
+    if (this.type === "Star" || this.type === "Jump Point") {
+      this.DOMButton.firstChild.insertAdjacentElement("beforeend", icon(this.type.split(" ").join("_")));
+    }
+
+    if (this.type === "Lagrange Point") {
+      this.DOMButton.firstChild.insertAdjacentElement("beforeend", icon("rhombus"));
     }
 
     for (const childBody of this.childBodies) {

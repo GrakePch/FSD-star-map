@@ -54,10 +54,22 @@ body {
     min-width: 10em;
     height: 100vh;
     color: #fff;
-    background-color: #80808010;
+    background-color: #20202040;
     backdrop-filter: blur(4px);
     z-index: 100;
     overflow-y: auto;
+}
+
+.navigation-tree::-webkit-scrollbar {
+    width: 5px;
+}
+
+.navigation-tree::-webkit-scrollbar-track {
+    background: #080808;
+}
+
+.navigation-tree::-webkit-scrollbar-thumb {
+    background: #222;
 }
 
 .navigation-tree .indent-0, .navigation-tree .indent-1, .navigation-tree .indent-2 {
@@ -69,29 +81,70 @@ body {
     text-align: left;
     cursor: pointer;
     user-select: none;
-    padding: .5em 1em;
+    padding: .5em 1em .5em .75em;
     background-color: transparent;
-    color: inherit;
-    transition: color .2s, background-color .2s;
+    color: #fff;
+    fill: #fff;
+
+    transition: color .2s, fill .2s, background-color .2s;
     font-family: inherit;
     font-size: inherit;
     font-weight: 500;
     border: none;
+    display: flex;
+    gap: .5em;
+    align-items: center;
+}
+
+.navigation-tree button .thumbnail {
+    width: 2em;
+    height: 2em;
+    background-color: transparent;
+    border-radius: 50%;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+/* .navigation-tree button * {
+    filter: drop-shadow(0px 0px 2px #40404080);
+} */
+
+.navigation-tree .Planet .thumbnail, .navigation-tree .Moon .thumbnail {
+    box-shadow: 0px 0px 4px 0px #00000080;
+}
+
+/* .navigation-tree .Star .thumbnail {
+    background-color: #ffffd7;
+    box-shadow: 0px 0px 4px 2px #ffffaa80;
+} */
+
+.navigation-tree button .sub {
+    font-size: .8rem;
+    color: #808080;
+    text-shadow: none;
+    transition: color .2s;
 }
 
 
 .navigation-tree button.targeting, .navigation-tree button.targeting+button {
     color: #000;
+    fill: #000;
     background-color: #ddd;
+}
+
+.navigation-tree button.targeting .sub, .navigation-tree button:hover .sub, .navigation-tree button:active .sub {
+    color: #606060;
 }
 
 .navigation-tree button:hover, .navigation-tree button:hover+button {
     color: #000;
+    fill: #000;
     background-color: #aaa;
 }
 
 .navigation-tree button:active, .navigation-tree button:active+button {
     color: #000;
+    fill: #000;
     background-color: #ddd;
 }
 
