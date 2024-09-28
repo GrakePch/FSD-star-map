@@ -103,15 +103,12 @@ class Database {
     }
 
     // Compute Orbital Radius
-    for (const body of DB.bodies)
-      if (isNaN(body.orbitRadius)) {
-        if (body.type === "Jump Point") {
-          body.orbitalRadius = euclideanDist(body.coordinates);
-        }
-        if (body.type === "Lagrange Point") {
-          body.orbitalRadius = euclideanDist(body.coordinates);
-        }
+    for (const body of DB.bodies) {
+      body.orbitalRadius = euclideanDist(body.coordinates);
+      if (body.type === "Moon") {
+        body.orbitalRadius = euclideanDist(body.coordinates, body.parentBody.coordinates);
       }
+    }
 
     // Sort children
     for (const body of DB.bodies) {
