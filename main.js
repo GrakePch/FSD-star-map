@@ -55,14 +55,9 @@ function onWindowResize() {
 }
 
 function animate() {
-  // console.log(getBodyByName("Hurston")?.meshBody)
   if (getBodyByName("Hurston")) {
-    // console.log(getBodyByName("Hurston").meshBody?.rotation)
-    getBodyByName("Hurston").meshBody?.rotateY(.01)
-    }
-
-    // console.log(getLocationByName("Lorville")?.label.getWorldPosition())
-  // console.log(getBodyByName("Hurston")?.meshBody?.getWorldPosition())
+    getBodyByName("Hurston").meshBody?.rotateY(0.01);
+  }
 
   if (rootBody) {
     rootBody.updateLabel();
