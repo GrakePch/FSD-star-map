@@ -2,7 +2,7 @@ import * as THREE from "three";
 import DB from "./classes/Database.js";
 import { CSS2DRenderer } from "three/addons/renderers/CSS2DRenderer.js";
 import Ctrls from "./classes/Controls.js";
-import { euclideanDist, getBodyByName } from "./utils.js";
+import { euclideanDist, getBodyByName, getLocationByName } from "./utils.js";
 import UI from "./classes/UI.js";
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
@@ -55,6 +55,15 @@ function onWindowResize() {
 }
 
 function animate() {
+  // console.log(getBodyByName("Hurston")?.meshBody)
+  if (getBodyByName("Hurston")) {
+    // console.log(getBodyByName("Hurston").meshBody?.rotation)
+    getBodyByName("Hurston").meshBody?.rotateY(.01)
+    }
+
+    // console.log(getLocationByName("Lorville")?.label.getWorldPosition())
+  // console.log(getBodyByName("Hurston")?.meshBody?.getWorldPosition())
+
   if (rootBody) {
     rootBody.updateLabel();
   }
