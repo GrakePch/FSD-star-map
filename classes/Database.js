@@ -1,5 +1,6 @@
 import { euclideanDist, getBodyByName } from "../utils.js";
 import CelestialBody from "./CelestialBody.js";
+import Location from "./Location.js";
 
 class Database {
   constructor() {
@@ -50,6 +51,7 @@ class Database {
 
   async createDatabase() {
     await Database.createCelestialBodies();
+    await Database.createLocations();
   }
 
   static async createCelestialBodies() {
@@ -97,7 +99,6 @@ class Database {
       let parentBody = getBodyByName(body.parentBody);
       body.parentBody = parentBody;
       if (parentBody) {
-        if (!parentBody.childBodies) parentBody.childBodies = Array();
         parentBody.childBodies.push(body);
       }
     }
@@ -114,6 +115,40 @@ class Database {
     for (const body of DB.bodies) {
       if (body.childBodies) {
         body.childBodies.sort((a, b) => (b.ordinal === "" ? (a.ordinal === "" ? 0 : -1) : a.ordinal === "" ? 1 : a.ordinal?.localeCompare(b.ordinal)));
+      }
+    }
+  }
+
+  static async createLocations() {
+    const locations = await Database.fetchCSV("/public/data/locations.csv");
+
+    for (const data of locations) {
+      new Location(
+        data.name,
+        data.type,
+        data.parentBody,
+        data.parentStar,
+        {
+          x: parseFloat(data.coordinateX),
+          y: parseFloat(data.coordinateZ),
+          z: -parseFloat(data.coordinateY),
+        },
+        data.private,
+        data.quantum,
+        data.affliation,
+        data.themeImage,
+        data.wikiLink
+      );
+    }
+
+    // Link CB object to location
+    // Push Locations to Celestial Bodies
+    for (const location of DB.locations) {
+      location.parentStar = getBodyByName(location.parentStar);
+      let parentBody = getBodyByName(location.parentBody);
+      location.parentBody = parentBody;
+      if (parentBody) {
+        parentBody.locations.push(location);
       }
     }
   }

@@ -26,6 +26,7 @@ export default class CelestialBody {
     this.angularRotationRate = 6 / this.rotationRate;
 
     this.childBodies = Array();
+    this.locations = Array();
 
     //TODO: consider parent as [0, 0, 0], which is a temporary
     // console.log(this.name)
@@ -81,6 +82,10 @@ export default class CelestialBody {
     this.#createLabel();
 
     this.#createElevationLine();
+
+    for (const location of this.locations) {
+      location.createLabel();
+    }
 
     if (this.parentBody) {
       this.parentBody.meshGroup.attach(this.meshGroup);
@@ -270,31 +275,56 @@ export default class CelestialBody {
     };
   }
 
+  showLabel(show) {
+    const labelEle = this.label.element;
+    if (show) labelEle.classList.remove("hide");
+    else labelEle.classList.add("hide");
+  }
+
   updateLabel() {
-    if (this.parentBody && UI.controlTarget !== this) {
-      const labelEle = this.label.element;
-      const labelRect = labelEle.getBoundingClientRect();
-      const labelCenter2D = [labelRect.x + 0.5 * labelRect.width, labelRect.y + 0.5 * labelRect.height];
+    if (Ctrls.controls.getDistance() > (UI.controlTarget ? UI.controlTarget.bodyRadius * 5 : 0)) {
+      if (this.parentBody && UI.controlTarget !== this) {
+        const labelEle = this.label.element;
+        const labelRect = labelEle.getBoundingClientRect();
+        const labelCenter2D = [labelRect.x + 0.5 * labelRect.width, labelRect.y + 0.5 * labelRect.height];
 
-      const labelParentEle = this.parentBody.label.element;
-      const labelParentRect = labelParentEle.getBoundingClientRect();
-      const labelParentCenter2D = [labelParentRect.x + 0.5 * labelParentRect.width, labelParentRect.y + 0.5 * labelParentRect.height];
+        const labelParentEle = this.parentBody.label.element;
+        const labelParentRect = labelParentEle.getBoundingClientRect();
+        const labelParentCenter2D = [labelParentRect.x + 0.5 * labelParentRect.width, labelParentRect.y + 0.5 * labelParentRect.height];
 
-      const thresholdDistX = (labelParentRect.width + labelRect.width) / 2;
-      const thresholdDistY = (labelParentRect.height + labelRect.height) / 2;
+        const thresholdDistX = (labelParentRect.width + labelRect.width) / 2;
+        const thresholdDistY = (labelParentRect.height + labelRect.height) / 2;
 
-      if (Math.abs(labelCenter2D[0] - labelParentCenter2D[0]) < thresholdDistX && Math.abs(labelCenter2D[1] - labelParentCenter2D[1]) < thresholdDistY) {
-        labelEle.classList.add("hide");
+        if (Math.abs(labelCenter2D[0] - labelParentCenter2D[0]) < thresholdDistX && Math.abs(labelCenter2D[1] - labelParentCenter2D[1]) < thresholdDistY) {
+          this.showLabel(false);
+        } else {
+          this.showLabel(true);
+        }
       } else {
-        labelEle.classList.remove("hide");
+        this.showLabel(true);
       }
     } else {
-      const labelEle = this.label.element;
-      labelEle.classList.remove("hide");
+      this.showLabel(false);
     }
 
     for (const childBody of this.childBodies) {
       childBody.updateLabel();
+    }
+  }
+
+  showLocations(show) {
+    for (const location of this.locations) {
+      location.showLabel(show);
+    }
+  }
+
+  updateLocationVisibility() {
+    if (Ctrls.controls.getDistance() < this.bodyRadius * 5) {
+      for (const location of this.locations) {
+        location.showLabel(location.checkIfAtFrontOfSphere());
+      }
+    } else {
+      this.showLocations(false);
     }
   }
 }

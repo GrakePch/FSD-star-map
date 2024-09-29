@@ -2,7 +2,8 @@ import * as THREE from "three";
 import DB from "./classes/Database.js";
 import { CSS2DRenderer } from "three/addons/renderers/CSS2DRenderer.js";
 import Ctrls from "./classes/Controls.js";
-import { getBodyByName } from "./utils.js";
+import { euclideanDist, getBodyByName } from "./utils.js";
+import UI from "./classes/UI.js";
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -57,6 +58,10 @@ function animate() {
   if (rootBody) {
     rootBody.updateLabel();
   }
+  if (UI.controlTarget) {
+    UI.controlTarget.updateLocationVisibility();
+  }
+
   controls.update();
   renderer.render(scene, camera);
   cssRenderer.render(scene, camera);
