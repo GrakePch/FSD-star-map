@@ -253,99 +253,99 @@ export default class CelestialBody {
 
   getZoomInTheBody() {
     return () => {
-      // 更新选中的 DOMButton
+      // Update the selected DOMButton
       UI.updateControlTarget(this);
       UI.controlTargetDOMButton?.classList.remove("targeting");
       UI.controlTargetDOMButton = this.DOMButton;
       UI.controlTargetDOMButton.classList.add("targeting");
   
       let targetPosition;
-      const starDistance = 70000000; // 星体的固定目标距离
-      const minDistanceThreshold = 1000; // 距离阈值，单位：根据场景调整（例如，1000）
+      const starDistance = 70000000; // Fixed target distance for stars
+      const minDistanceThreshold = 1000; // Distance threshold, unit: adjust according to the scene (e.g., 1000)
   
-      // 获取当前摄像机的位置
+      // Get the current position of the camera
       const cameraPosition = Ctrls.camera.position.clone();
   
       if (this.type === "Star") {
-        // 如果是星体，直接移动到固定位置
+        // If it's a star, move directly to the fixed position
         targetPosition = new THREE.Vector3(0, starDistance, 0);
       } else {
-        // 获取天体中心位置
+        // Get the center position of the celestial body
         const objectPosition = this.meshBody.position.clone();
   
-        // 计算天体应有的距离，Math.max(this.bodyRadius, 600) * 3
+        // Calculate the required distance for the celestial body, Math.max(this.bodyRadius, 600) * 3
         const dynamicDistance = Math.max(this.bodyRadius, 600) * 3;
   
-        // 计算摄像机到天体中心的方向向量
+        // Calculate the direction vector from the camera to the center of the celestial body
         const directionToCamera = cameraPosition.clone().sub(objectPosition).normalize();
   
-        // 计算目标位置：在当前方向上距离为 dynamicDistance 的点
+        // Calculate the target position: a point at a distance of dynamicDistance in the current direction
         targetPosition = objectPosition.clone().add(directionToCamera.multiplyScalar(dynamicDistance));
       }
   
-      const currentPosition = Ctrls.camera.position.clone(); // 当前摄像机位置
-      const currentTarget = Ctrls.controls.target.clone(); // 当前摄像机目标位置
-      const targetObjectPosition = this.meshBody.position.clone(); // 目标天体的中心位置
+      const currentPosition = Ctrls.camera.position.clone(); // Current camera position
+      const currentTarget = Ctrls.controls.target.clone(); // Current camera target position
+      const targetObjectPosition = this.meshBody.position.clone(); // Center position of the target celestial body
   
-      // 计算摄像机当前距离目标位置的距离
+      // Calculate the distance from the current camera position to the target position
       const distanceToTarget = currentPosition.distanceTo(targetPosition);
   
-      // 如果摄像机与目标的距离小于阈值，则直接瞬移
+      // If the distance between the camera and the target is less than the threshold, teleport directly
       if (distanceToTarget < minDistanceThreshold) {
         Ctrls.camera.position.copy(targetPosition);
         Ctrls.controls.target.copy(targetObjectPosition);
         
-        // 确保摄像机对准目标位置
+        // Ensure the camera is aimed at the target position
         Ctrls.camera.lookAt(this.meshBody.position);
-        return; // 打断动画
+        return; // Interrupt the animation
       }
   
-      const duration = 2000; // 动画持续时间
+      const duration = 2000; // Animation duration
       const startTime = performance.now();
   
-      // 缓动函数
+      // Easing function
       const easeOutQuint = (t) => 1 - Math.pow(1 - t, 5);
   
-      // 动画函数
+      // Animation function
       const animate = (time) => {
         const elapsed = time - startTime;
-        const t = Math.min(elapsed / duration, 1); // 插值系数 [0,1]
+        const t = Math.min(elapsed / duration, 1); // Interpolation factor [0,1]
   
-        // 使用缓动函数计算摄像机位置的过渡
+        // Use the easing function to calculate the transition of the camera position
         const easedPositionT = easeOutQuint(t);
         const newPosition = currentPosition.clone().lerp(targetPosition, easedPositionT);
         Ctrls.camera.position.copy(newPosition);
   
-        // 动态计算摄像机的旋转，使其始终对准目标位置
+        // Dynamically calculate the camera's rotation to ensure it is always aimed at the target position
         const targetQuaternion = new THREE.Quaternion();
         const lookAtMatrix = new THREE.Matrix4().lookAt(Ctrls.camera.position, this.meshBody.position, Ctrls.camera.up);
         targetQuaternion.setFromRotationMatrix(lookAtMatrix);
   
-        // 进行旋转插值（SLERP）
+        // Perform rotation interpolation (SLERP)
         Ctrls.camera.quaternion.slerp(targetQuaternion, t);
   
-        // 插值控制器的目标位置
+        // Interpolate the controller's target position
         const newTarget = currentTarget.clone().lerp(targetObjectPosition, easedPositionT);
         Ctrls.controls.target.copy(newTarget);
   
-        // 每一帧检查摄像机与目标的距离，如果足够接近，则打断动画并瞬移
+        // Check the distance between the camera and the target each frame, if close enough, interrupt the animation and teleport
         const currentDistance = Ctrls.camera.position.distanceTo(targetPosition);
         if (currentDistance < minDistanceThreshold) {
           Ctrls.camera.position.copy(targetPosition);
           Ctrls.controls.target.copy(targetObjectPosition);
-          // 确保摄像机对准目标位置
+          // Ensure the camera is aimed at the target position
           Ctrls.camera.lookAt(this.meshBody.position);
-          return; // 打断动画
+          return; // Interrupt the animation
         }
   
         if (t < 1) {
           requestAnimationFrame(animate);
         } else {
-          // 动画结束时，确保摄像机精确对准目标位置
+          // At the end of the animation, ensure the camera is precisely aimed at the target position
           Ctrls.camera.position.copy(targetPosition);
           Ctrls.controls.target.copy(targetObjectPosition);
   
-          // 强制对准天体中心，确保最终位置正确
+          // Force the camera to aim at the center of the celestial body to ensure the final position is correct
           Ctrls.controls.target.copy(this.meshBody.position); 
         }
       };
