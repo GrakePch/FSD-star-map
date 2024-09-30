@@ -257,9 +257,10 @@ export default class CelestialBody {
       UI.controlTargetDOMButton?.classList.remove("targeting");
       UI.controlTargetDOMButton = this.DOMButton;
       UI.controlTargetDOMButton.classList.add("targeting");
-
+  
+      let targetPosition;
       if (this.type === "Star") {
-        Ctrls.camera.position.set(0, 70000000, 0);
+        targetPosition = new THREE.Vector3(0, 70000000, 0);
       } else {
         const camPos = new THREE.Vector3(...this.getPosition());
         const direction = camPos
@@ -267,13 +268,37 @@ export default class CelestialBody {
           .normalize()
           .multiplyScalar(Math.max(this.bodyRadius, 600) * 3);
         camPos.sub(direction);
-        Ctrls.camera.position.set(...camPos);
+        targetPosition = camPos;
       }
+  
+      const currentPosition = Ctrls.camera.position.clone();
+      const duration = 2000; // Animation duration in milliseconds
+      const startTime = performance.now();
+  
+      // Cubic easing function, fast at the start and slow at the end
+      const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+  
+      const animate = (time) => {
+        const elapsed = time - startTime;
+        const t = Math.min(elapsed / duration, 1); // Calculate interpolation factor
+        const easedT = easeOutCubic(t); // Apply cubic easing function
+  
+        // Interpolate to calculate new camera position
+        const newPosition = currentPosition.clone().lerp(targetPosition, easedT);
+        Ctrls.camera.position.set(newPosition.x, newPosition.y, newPosition.z);
+  
+        if (t < 1) {
+          requestAnimationFrame(animate); // Continue animation
+        }
+      };
+  
+      requestAnimationFrame(animate); // Start animation
+  
       Ctrls.controls.target.set(...this.meshBody.position);
-
       Ctrls.controls.minDistance = Math.max(this.bodyRadius, 100) * 1.1;
     };
   }
+  
 
   showLabel(show) {
     const labelEle = this.label.element;

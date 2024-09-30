@@ -11,6 +11,8 @@ class Controls {
     this.controls = new OrbitControls(camera, domElement);
     // this.controls.enablePan = false;
     this.controls.maxDistance = 200000000;
+    this.controls.enableDamping = true; // Enable damping (transition animation)
+    this.controls.dampingFactor = 0.05; // Damping factor
   }
 
   update() {
@@ -21,4 +23,3 @@ class Controls {
 const Ctrls = new Controls();
 
 export default Ctrls;
-
