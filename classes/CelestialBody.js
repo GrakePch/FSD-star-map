@@ -253,53 +253,109 @@ export default class CelestialBody {
 
   getZoomInTheBody() {
     return () => {
+      // 更新选中的 DOMButton
       UI.updateControlTarget(this);
       UI.controlTargetDOMButton?.classList.remove("targeting");
       UI.controlTargetDOMButton = this.DOMButton;
       UI.controlTargetDOMButton.classList.add("targeting");
   
       let targetPosition;
+      const starDistance = 70000000; // 星体的固定目标距离
+      const minDistanceThreshold = 1000; // 距离阈值，单位：根据场景调整（例如，1000）
+  
+      // 获取当前摄像机的位置
+      const cameraPosition = Ctrls.camera.position.clone();
+  
       if (this.type === "Star") {
-        targetPosition = new THREE.Vector3(0, 70000000, 0);
+        // 如果是星体，直接移动到固定位置
+        targetPosition = new THREE.Vector3(0, starDistance, 0);
       } else {
-        const camPos = new THREE.Vector3(...this.getPosition());
-        const direction = camPos
-          .clone()
-          .normalize()
-          .multiplyScalar(Math.max(this.bodyRadius, 600) * 3);
-        camPos.sub(direction);
-        targetPosition = camPos;
+        // 获取天体中心位置
+        const objectPosition = this.meshBody.position.clone();
+  
+        // 计算天体应有的距离，Math.max(this.bodyRadius, 600) * 3
+        const dynamicDistance = Math.max(this.bodyRadius, 600) * 3;
+  
+        // 计算摄像机到天体中心的方向向量
+        const directionToCamera = cameraPosition.clone().sub(objectPosition).normalize();
+  
+        // 计算目标位置：在当前方向上距离为 dynamicDistance 的点
+        targetPosition = objectPosition.clone().add(directionToCamera.multiplyScalar(dynamicDistance));
       }
   
-      const currentPosition = Ctrls.camera.position.clone();
-      const duration = 2000; // Animation duration in milliseconds
+      const currentPosition = Ctrls.camera.position.clone(); // 当前摄像机位置
+      const currentTarget = Ctrls.controls.target.clone(); // 当前摄像机目标位置
+      const targetObjectPosition = this.meshBody.position.clone(); // 目标天体的中心位置
+  
+      // 计算摄像机当前距离目标位置的距离
+      const distanceToTarget = currentPosition.distanceTo(targetPosition);
+  
+      // 如果摄像机与目标的距离小于阈值，则直接瞬移
+      if (distanceToTarget < minDistanceThreshold) {
+        Ctrls.camera.position.copy(targetPosition);
+        Ctrls.controls.target.copy(targetObjectPosition);
+        
+        // 确保摄像机对准目标位置
+        Ctrls.camera.lookAt(this.meshBody.position);
+        return; // 打断动画
+      }
+  
+      const duration = 2000; // 动画持续时间
       const startTime = performance.now();
   
-      // Cubic easing function, fast at the start and slow at the end
-      const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+      // 缓动函数
+      const easeOutQuint = (t) => 1 - Math.pow(1 - t, 5);
   
+      // 动画函数
       const animate = (time) => {
         const elapsed = time - startTime;
-        const t = Math.min(elapsed / duration, 1); // Calculate interpolation factor
-        const easedT = easeOutCubic(t); // Apply cubic easing function
+        const t = Math.min(elapsed / duration, 1); // 插值系数 [0,1]
   
-        // Interpolate to calculate new camera position
-        const newPosition = currentPosition.clone().lerp(targetPosition, easedT);
-        Ctrls.camera.position.set(newPosition.x, newPosition.y, newPosition.z);
+        // 使用缓动函数计算摄像机位置的过渡
+        const easedPositionT = easeOutQuint(t);
+        const newPosition = currentPosition.clone().lerp(targetPosition, easedPositionT);
+        Ctrls.camera.position.copy(newPosition);
+  
+        // 动态计算摄像机的旋转，使其始终对准目标位置
+        const targetQuaternion = new THREE.Quaternion();
+        const lookAtMatrix = new THREE.Matrix4().lookAt(Ctrls.camera.position, this.meshBody.position, Ctrls.camera.up);
+        targetQuaternion.setFromRotationMatrix(lookAtMatrix);
+  
+        // 进行旋转插值（SLERP）
+        Ctrls.camera.quaternion.slerp(targetQuaternion, t);
+  
+        // 插值控制器的目标位置
+        const newTarget = currentTarget.clone().lerp(targetObjectPosition, easedPositionT);
+        Ctrls.controls.target.copy(newTarget);
+  
+        // 每一帧检查摄像机与目标的距离，如果足够接近，则打断动画并瞬移
+        const currentDistance = Ctrls.camera.position.distanceTo(targetPosition);
+        if (currentDistance < minDistanceThreshold) {
+          Ctrls.camera.position.copy(targetPosition);
+          Ctrls.controls.target.copy(targetObjectPosition);
+          // 确保摄像机对准目标位置
+          Ctrls.camera.lookAt(this.meshBody.position);
+          return; // 打断动画
+        }
   
         if (t < 1) {
-          requestAnimationFrame(animate); // Continue animation
+          requestAnimationFrame(animate);
+        } else {
+          // 动画结束时，确保摄像机精确对准目标位置
+          Ctrls.camera.position.copy(targetPosition);
+          Ctrls.controls.target.copy(targetObjectPosition);
+  
+          // 强制对准天体中心，确保最终位置正确
+          Ctrls.controls.target.copy(this.meshBody.position); 
         }
       };
   
-      requestAnimationFrame(animate); // Start animation
-  
-      Ctrls.controls.target.set(...this.meshBody.position);
-      Ctrls.controls.minDistance = Math.max(this.bodyRadius, 100) * 1.1;
+      requestAnimationFrame(animate);
     };
   }
   
-
+  
+  
   showLabel(show) {
     const labelEle = this.label.element;
     if (show) labelEle.classList.remove("hide");
