@@ -162,10 +162,11 @@ export default class CelestialBody {
   }
 
   #loadMaps() {
-    return;
+    const loadHD = false;
+
     const textureLoader = new THREE.TextureLoader();
     textureLoader.load(
-      `./public/textures/bodies-hd/${this.name.toLowerCase()}.webp`,
+      `./public/textures/${loadHD? "bodies-hd" : "bodies"}/${this.name.toLowerCase()}.webp`,
       (t) => {
         t.colorSpace = THREE.SRGBColorSpace;
         this.meshBody.material.map = t;
