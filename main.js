@@ -59,8 +59,8 @@ function onWindowResize() {
 }
 
 function animate() {
-
   if (rootBody) {
+    rootBody.updateRotationRecur();
     rootBody.updateLabel();
   }
   if (UI.controlTarget) {
