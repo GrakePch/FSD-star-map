@@ -5,6 +5,15 @@ class UserInterface {
 
     this.controlTarget = null;
     this.controlTargetDOMButton = null;
+    this.celestialBodies = []; // 初始化 celestialBodies 数组
+  }
+
+  addCelestialBody(body) {
+    this.celestialBodies.push(body);
+  }
+
+  getAllCelestialBodies() {
+    return this.celestialBodies;
   }
 
   updateControlTarget(cbody) {
@@ -13,6 +22,10 @@ class UserInterface {
     }
     this.controlTarget = cbody;
     document.getElementById("targeting-body").innerHTML = cbody.name;
+  }
+
+  getControlTarget() {
+    return this.controlTarget;
   }
 }
 

@@ -47,6 +47,9 @@ export default class CelestialBody {
       )
     );
 
+    // 将当前星球对象添加到 UI 类的 celestialBodies 数组中
+    UI.addCelestialBody(this);
+
     DB.bodies.push(this);
   }
 
@@ -385,60 +388,55 @@ export default class CelestialBody {
 
   showCoordinatesOnHover() {
     const coordinatesDiv = document.getElementById('coordinates');
-
+  
     const onMouseMove = (event) => {
       // 获取鼠标位置
       const mouse = new THREE.Vector2();
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
+  
       // 创建射线
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(mouse, Ctrls.camera);
-
-      // 获取所有星球对象
-      const celestialBodies = UI.getAllCelestialBodies();
-
-      // 遍历所有星球对象，检测与每个星球的交点
-      let found = false;
-      for (const body of celestialBodies) {
-        if (body.meshBody) {
-          const intersects = raycaster.intersectObject(body.meshBody);
-          if (intersects.length > 0) {
-            const intersect = intersects[0];
-            const point = intersect.point;
-
-            // 计算经纬度
-            const radius = body.bodyRadius;
-            const phi = Math.acos(point.y / radius);
-            const theta = Math.atan2(point.z, point.x);
-
-            const latitude = (phi * 180) / Math.PI - 90;
-            const longitude = (theta * 180) / Math.PI;
-
-            // 显示经纬度信息
-            const info = `纬度: ${latitude.toFixed(2)}°, 经度: ${longitude.toFixed(2)}°`;
-            coordinatesDiv.innerHTML = info;
-            coordinatesDiv.style.display = 'block';
-            coordinatesDiv.style.left = `${event.clientX + 10}px`;
-            coordinatesDiv.style.top = `${event.clientY + 10}px`;
-
-            // 更新当前目标星球
-            UI.updateControlTarget(body);
-            found = true;
-            break; // 只处理第一个检测到的星球
-          }
+  
+      // 获取当前聚焦的星球
+      const focusedBody = UI.getControlTarget();
+  
+      if (focusedBody && focusedBody.meshBody) {
+        const intersects = raycaster.intersectObject(focusedBody.meshBody);
+        if (intersects.length > 0) {
+          const intersect = intersects[0];
+          const point = intersect.point;
+  
+          // 使用星球的原点计算相对于星球中心的坐标
+          const relativePoint = point.clone().sub(focusedBody.meshBody.position);
+  
+          // 计算经纬度
+          const radius = focusedBody.bodyRadius;
+          const phi = Math.acos(relativePoint.y / radius);
+          const theta = Math.atan2(relativePoint.z, relativePoint.x);
+  
+          const latitude = (phi * 180) / Math.PI - 90;
+          const longitude = (theta * 180) / Math.PI;
+  
+          // 显示经纬度信息
+          const info = `纬度: ${latitude.toFixed(2)}°, 经度: ${longitude.toFixed(2)}°`;
+          coordinatesDiv.innerHTML = info;
+          coordinatesDiv.style.display = 'block';
+          coordinatesDiv.style.left = `${event.clientX + 10}px`;
+          coordinatesDiv.style.top = `${event.clientY + 10}px`;
+  
+          return;
         }
       }
-
-      if (!found) {
-        coordinatesDiv.style.display = 'none';
-      }
+  
+      coordinatesDiv.style.display = 'none';
     };
-
+  
     // 添加鼠标移动事件侦听器
     window.addEventListener('mousemove', onMouseMove);
   }
+  
 
   showLabel(show) {
     const labelEle = this.label.element;

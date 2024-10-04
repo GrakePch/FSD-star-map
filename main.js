@@ -48,6 +48,9 @@ async function init() {
   rootBody.addToScene(scene);
 
   rootBody.createNavDOMAt(document.querySelector("#nav-panel"), 0);
+
+  // 调用 showCoordinatesOnHover 方法
+  rootBody.showCoordinatesOnHover();
 }
 init();
 
