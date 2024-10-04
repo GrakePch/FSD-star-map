@@ -2,7 +2,7 @@ import DB from "./Database.js";
 import * as THREE from "three";
 import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 import Ctrls from "./Controls.js";
-import { euclideanDist } from "../utils.js";
+import { euclideanDist, getNumDaysSinceAnchor, modulo } from "../utils.js";
 import UI from "./UI.js";
 import { icon } from "../icons.js";
 
@@ -16,8 +16,8 @@ export default class CelestialBody {
     this.coordinates = coordinates;
     this.rotationQuanternion = rotationQuanternion;
     this.bodyRadius = bodyRadius;
-    this.rotationRate = rotationRate;
-    this.rotationCorrection = rotationCorrection;
+    this.rotationRate = rotationRate || 0;
+    this.rotationCorrection = rotationCorrection || 0;
     this.orbitAngle = orbitAngle;
     this.orbitalRadius = orbitalRadius;
     this.themeColor = themeColor;
@@ -162,10 +162,11 @@ export default class CelestialBody {
   }
 
   #loadMaps() {
-    return;
+    const loadHD = false;
+
     const textureLoader = new THREE.TextureLoader();
     textureLoader.load(
-      `./public/textures/bodies-hd/${this.name.toLowerCase()}.webp`,
+      `./public/textures/${loadHD ? "bodies-hd" : "bodies"}/${this.name.toLowerCase()}.webp`,
       (t) => {
         t.colorSpace = THREE.SRGBColorSpace;
         this.meshBody.material.map = t;
@@ -361,9 +362,7 @@ export default class CelestialBody {
       requestAnimationFrame(animate);
     };
   }
-  
-  
-  
+
   showLabel(show) {
     const labelEle = this.label.element;
     if (show) labelEle.classList.remove("hide");
@@ -408,12 +407,39 @@ export default class CelestialBody {
   }
 
   updateLocationVisibility() {
-    if (Ctrls.controls.getDistance() < this.bodyRadius * 5) {
+    if (Ctrls.controls.getDistance() < Math.max(this.bodyRadius * 5, 1000)) {
       for (const location of this.locations) {
         location.showLabel(location.checkIfAtFrontOfSphere());
       }
     } else {
       this.showLocations(false);
+    }
+  }
+
+  getCurrentCycle() {
+    if (this.lengthOfDay === 0) {
+      return 0;
+    } else {
+      return getNumDaysSinceAnchor() / this.lengthOfDay;
+    }
+  }
+
+  getRotationDeg() {
+    const cycle = this.getCurrentCycle();
+    const rotDeg = modulo(cycle, 1) * 360;
+    const correctedRotDeg = 360 - rotDeg - this.rotationCorrection;
+    const result = modulo(90 - correctedRotDeg, 360);
+    return result;
+  }
+
+  updateRotationByTime() {
+    this.meshBody.rotation.y = THREE.MathUtils.degToRad(this.getRotationDeg());
+  }
+
+  updateRotationRecur() {
+    this.updateRotationByTime();
+    for (const body of this.childBodies) {
+      body.updateRotationRecur();
     }
   }
 }

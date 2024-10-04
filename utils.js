@@ -12,7 +12,22 @@ export function euclideanDist(d1, d2) {
 }
 
 export function getLocationByName(name) {
-    if (!name) return null;
-    for (const location of DB.locations) if (location.name === name) return location;
-    return null;
-  }
+  if (!name) return null;
+  for (const location of DB.locations) if (location.name === name) return location;
+  return null;
+}
+
+export function getRealTime() {
+  return new Date();
+}
+
+export function getNumDaysSinceAnchor() {
+  const anchor = new Date("2020-01-01T00:00:00.000Z");
+  const now = getRealTime();
+  const timeSinceAnchor = now - anchor;
+  return timeSinceAnchor / 1000 / 60 / 60 / 24;
+}
+
+export function modulo(dividend, divisor) {
+	return (dividend % divisor + divisor) % divisor;
+}

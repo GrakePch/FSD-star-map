@@ -47,6 +47,9 @@ body {
 .label-location {
     position: relative;
     transition: font-size .2s, opacity .2s;
+    width: 0;
+    height: 0;
+    --icon-size: 4px;
 }
 
 .label-location.hide {
@@ -55,30 +58,50 @@ body {
     transition: font-size .2s, opacity .2s, visibility 0s .2s;
 }
 
-.label-location.landing_zone .label {
-    font-size: 16px;
-    font-weight: 600;
+.label-location .label {
+    position: absolute;
+    width: max-content;
+    bottom: calc(var(--icon-size) / 2 + 4px);
+    left: 0;
+    transform: translate(-50%, 0);
 }
 
 .label-location:hover .label {
     color: var(--color-highlight);
 }
 
-.label-location:hover .label + div {
+.label-location:hover .icon {
     background-color: var(--color-highlight);
 }
 
-.label-location .label+div {
+.label-location .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: absolute;
-    width: 4px;
-    height: 4px;
+    width: var(--icon-size);
+    height: var(--icon-size);
     background-color: #fff;
-    outline: 1px solid #444;
+    outline: 1px solid #222;
     border-radius: 50%;
-    top: 150%;
-    left: 50%;
+    top: 0;
+    left: 0;
     transform: translate(-50%, -50%);
 
+}
+
+.label-location.large .label {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.label-location.large {
+    --icon-size: 20px;
+}
+
+.label-location.large .icon>svg {
+    width: calc(var(--icon-size) - 2px);
+    height: calc(var(--icon-size) - 2px);
 }
 
 #targeting-body {

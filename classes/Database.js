@@ -66,9 +66,9 @@ class Database {
         data.parentBody,
         data.parentStar,
         {
-          x: parseFloat(data.coordinateX),
+          x: -parseFloat(data.coordinateX),
           y: parseFloat(data.coordinateZ),
-          z: -parseFloat(data.coordinateY),
+          z: parseFloat(data.coordinateY),
         },
         {
           w: parseFloat(data.quaternionW),
@@ -129,9 +129,9 @@ class Database {
         data.parentBody,
         data.parentStar,
         {
-          x: parseFloat(data.coordinateX),
+          x: -parseFloat(data.coordinateX),
           y: parseFloat(data.coordinateZ),
-          z: -parseFloat(data.coordinateY),
+          z: parseFloat(data.coordinateY),
         },
         data.private,
         data.quantum,
