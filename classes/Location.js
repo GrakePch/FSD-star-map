@@ -47,14 +47,12 @@ export default class Location {
   }
 
   checkIfAtFrontOfSphere() {
-    let updatedNormal = this.label.parent.localToWorld(this.label.position.clone());
-    updatedNormal.sub(this.label.parent.position)
-    let cameraPos = Ctrls.camera.position.clone();
-    let controlTargetPos = Ctrls.controls.target.clone();
-    let cameraVec = new THREE.Vector3();
-    cameraVec.subVectors(cameraPos, controlTargetPos);
-    let locationToCamVec = cameraVec.clone().sub(updatedNormal);
-    let angleRad = updatedNormal.angleTo(locationToCamVec);
-    return angleRad < Math.PI / 2;
+    const raycaster = new THREE.Raycaster();
+    const pos = new THREE.Vector3();
+    this.label.getWorldPosition(pos);
+    const dir = new THREE.Vector3().copy(pos).sub(Ctrls.camera.position).normalize().negate();
+    raycaster.set(pos, dir);
+    const intersects = raycaster.intersectObject(this.parentBody.meshBody, false);
+    return intersects.length <= 0;
   }
 }
