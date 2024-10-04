@@ -261,7 +261,7 @@ export default class CelestialBody {
   
       let targetPosition;
       const starDistance = 70000000; // Fixed target distance for stars
-      const minDistanceThreshold = 1000; // Distance threshold, unit: adjust according to the scene (e.g., 1000)
+      const minDistanceThreshold = 10; // Distance threshold, unit: adjust according to the scene (e.g., 1000)
   
       // Get the current position of the camera
       const cameraPosition = Ctrls.camera.position.clone();
@@ -281,6 +281,14 @@ export default class CelestialBody {
   
         // Calculate the target position: a point at a distance of dynamicDistance in the current direction
         targetPosition = objectPosition.clone().add(directionToCamera.multiplyScalar(dynamicDistance));
+        
+        // Calculate the direction vector from the celestial body to the sun
+        const sunPosition = new THREE.Vector3(0, 0, 0); // Assuming the sun is at the origin
+        const directionToSun = sunPosition.clone().sub(objectPosition).normalize();
+        
+        // Apply a small offset towards the sun direction
+        const sunOffset = directionToSun.multiplyScalar(100); // Adjust the offset as needed
+        targetPosition.add(sunOffset);
       }
   
       const currentPosition = Ctrls.camera.position.clone(); // Current camera position
