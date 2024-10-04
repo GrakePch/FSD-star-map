@@ -259,27 +259,27 @@ export default class CelestialBody {
       UI.controlTargetDOMButton?.classList.remove("targeting");
       UI.controlTargetDOMButton = this.DOMButton;
       UI.controlTargetDOMButton.classList.add("targeting");
-  
+
       let targetPosition;
       const starDistance = 70000000; // Fixed target distance for stars
       const minDistanceThreshold = 10; // Distance threshold, unit: adjust according to the scene (e.g., 1000)
-  
+
       // Get the current position of the camera
       const cameraPosition = Ctrls.camera.position.clone();
-  
+
       if (this.type === "Star") {
         // If it's a star, move directly to the fixed position
         targetPosition = new THREE.Vector3(0, starDistance, 0);
       } else {
         // Get the center position of the celestial body
         const objectPosition = this.meshBody.position.clone();
-  
+
         // Calculate the required distance for the celestial body, Math.max(this.bodyRadius, 600) * 3
-        const dynamicDistance = Math.max(this.bodyRadius, 600) * 3;
-  
+        const dynamicDistance = Math.max(this.bodyRadius, 300) * 3;
+
         // Calculate the direction vector from the camera to the center of the celestial body
         const directionToCamera = cameraPosition.clone().sub(objectPosition).normalize();
-  
+
         // Calculate the target position: a point at a distance of dynamicDistance in the current direction
         targetPosition = objectPosition.clone().add(directionToCamera.multiplyScalar(dynamicDistance));
         
@@ -291,14 +291,14 @@ export default class CelestialBody {
         const sunOffset = directionToSun.multiplyScalar(100); // Adjust the offset as needed
         targetPosition.add(sunOffset);
       }
-  
+
       const currentPosition = Ctrls.camera.position.clone(); // Current camera position
       const currentTarget = Ctrls.controls.target.clone(); // Current camera target position
       const targetObjectPosition = this.meshBody.position.clone(); // Center position of the target celestial body
-  
+
       // Calculate the distance from the current camera position to the target position
       const distanceToTarget = currentPosition.distanceTo(targetPosition);
-  
+
       // If the distance between the camera and the target is less than the threshold, teleport directly
       if (distanceToTarget < minDistanceThreshold) {
         Ctrls.camera.position.copy(targetPosition);
@@ -308,35 +308,46 @@ export default class CelestialBody {
         Ctrls.camera.lookAt(this.meshBody.position);
         return; // Interrupt the animation
       }
-  
+
       const duration = 2000; // Animation duration
       const startTime = performance.now();
-  
+      let isAnimating = true; // Animation state flag
+
       // Easing function
       const easeOutQuint = (t) => 1 - Math.pow(1 - t, 5);
-  
+
+      // Mouse event listener to stop animation
+      const stopAnimation = () => {
+        isAnimating = false;
+      };
+
       // Animation function
       const animate = (time) => {
+        if (!isAnimating) {
+          window.removeEventListener('mousedown', stopAnimation);
+          return;
+        }
+
         const elapsed = time - startTime;
         const t = Math.min(elapsed / duration, 1); // Interpolation factor [0,1]
-  
+
         // Use the easing function to calculate the transition of the camera position
         const easedPositionT = easeOutQuint(t);
         const newPosition = currentPosition.clone().lerp(targetPosition, easedPositionT);
         Ctrls.camera.position.copy(newPosition);
-  
+
         // Dynamically calculate the camera's rotation to ensure it is always aimed at the target position
         const targetQuaternion = new THREE.Quaternion();
         const lookAtMatrix = new THREE.Matrix4().lookAt(Ctrls.camera.position, this.meshBody.position, Ctrls.camera.up);
         targetQuaternion.setFromRotationMatrix(lookAtMatrix);
-  
+
         // Perform rotation interpolation (SLERP)
         Ctrls.camera.quaternion.slerp(targetQuaternion, t);
-  
+
         // Interpolate the controller's target position
         const newTarget = currentTarget.clone().lerp(targetObjectPosition, easedPositionT);
         Ctrls.controls.target.copy(newTarget);
-  
+
         // Check the distance between the camera and the target each frame, if close enough, interrupt the animation and teleport
         const currentDistance = Ctrls.camera.position.distanceTo(targetPosition);
         if (currentDistance < minDistanceThreshold) {
@@ -344,21 +355,30 @@ export default class CelestialBody {
           Ctrls.controls.target.copy(targetObjectPosition);
           // Ensure the camera is aimed at the target position
           Ctrls.camera.lookAt(this.meshBody.position);
+          window.removeEventListener('mousedown', stopAnimation);
           return; // Interrupt the animation
         }
-  
+
         if (t < 1) {
           requestAnimationFrame(animate);
         } else {
           // At the end of the animation, ensure the camera is precisely aimed at the target position
           Ctrls.camera.position.copy(targetPosition);
           Ctrls.controls.target.copy(targetObjectPosition);
-  
+
           // Force the camera to aim at the center of the celestial body to ensure the final position is correct
-          Ctrls.controls.target.copy(this.meshBody.position); 
+          Ctrls.controls.target.copy(this.meshBody.position);
+          window.removeEventListener('mousedown', stopAnimation);
         }
       };
-  
+
+      // Start animation and add mouse event listener after 0.1 seconds
+      setTimeout(() => {
+        if (isAnimating) {
+          window.addEventListener('mousedown', stopAnimation);
+        }
+      }, 100);
+
       requestAnimationFrame(animate);
     };
   }
