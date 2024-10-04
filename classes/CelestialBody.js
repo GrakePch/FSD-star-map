@@ -7,7 +7,7 @@ import UI from "./UI.js";
 import { icon } from "../icons.js";
 
 export default class CelestialBody {
-  constructor(name, type, ordinal, parentBody, parentStar, coordinates, rotationQuanternion, bodyRadius, rotationRate, rotationCorrection, orbitAngle, orbitalRadius, themeColor) {
+  constructor(name, type, ordinal, parentBody, parentStar, coordinates, rotationQuanternion, bodyRadius, rotationRate, rotationCorrection, orbitAngle, orbitalRadius, ringRadiusInner, ringRadiusOuter, themeColor) {
     this.name = name;
     this.type = type;
     this.ordinal = ordinal;
@@ -20,6 +20,8 @@ export default class CelestialBody {
     this.rotationCorrection = rotationCorrection || 0;
     this.orbitAngle = orbitAngle;
     this.orbitalRadius = orbitalRadius;
+    this.ringRadiusInner = ringRadiusInner;
+    this.ringRadiusOuter = ringRadiusOuter;
     this.themeColor = themeColor;
 
     this.lengthOfDay = (3600 * this.rotationRate) / 86400;
@@ -28,14 +30,6 @@ export default class CelestialBody {
     this.childBodies = Array();
     this.locations = Array();
 
-    //TODO: consider parent as [0, 0, 0], which is a temporary
-    // console.log(this.name)
-    // console.log(this.coordinates.y)
-    // console.log(euclideanDist({
-    //   x: this.coordinates.x,
-    //   y: this.coordinates.y,
-    //   z: this.coordinates.z,
-    // }))
     this.orbitalInclination = THREE.MathUtils.radToDeg(
       Math.atan(
         this.coordinates.y /
@@ -78,6 +72,8 @@ export default class CelestialBody {
       this.#createMeshOrbit([0, 0, 0], 0x404040);
       this.meshGroup.attach(this.meshOrbit);
     }
+
+    this.#createMeshRing();
 
     this.#createLabel();
 
@@ -137,6 +133,30 @@ export default class CelestialBody {
 
     this.meshOrbit = meshOrbit;
     this.meshGroup.attach(this.meshOrbit);
+  }
+
+  #createMeshRing() {
+    if (!(this.ringRadiusInner && this.ringRadiusOuter)) return;
+    let tex = new THREE.TextureLoader().load(`./public/textures/rings/asteroid_ring_yela_diff.png`);
+    const geometry = new THREE.RingGeometry(this.ringRadiusInner, this.ringRadiusOuter, 100);
+    var pos = geometry.attributes.position;
+    var v3 = new THREE.Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      v3.fromBufferAttribute(pos, i);
+      geometry.attributes.uv.setXY(i, 1, v3.length() < (this.ringRadiusInner + this.ringRadiusOuter) / 2 ? 0 : 1);
+    }
+
+    const material = new THREE.MeshStandardMaterial({
+      map: tex,
+      side: THREE.DoubleSide,
+      transparent: true,
+      emissive: 0x8cc2ff,
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.rotateX(Math.PI / 2);
+
+    this.meshRing = mesh;
+    this.meshBody.add(mesh);
   }
 
   #createLabel() {

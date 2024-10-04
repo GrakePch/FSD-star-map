@@ -59,7 +59,7 @@ class Database {
 
     // Create Celestial Bodies
     for (const data of bodies) {
-      let cb = new CelestialBody(
+      new CelestialBody(
         data.name,
         data.type,
         data.ordinal,
@@ -81,6 +81,8 @@ class Database {
         parseFloat(data.rotationCorrection),
         parseFloat(data.orbitAngle),
         parseFloat(data.orbitRadius),
+        parseFloat(data.ringRadiusInner),
+        parseFloat(data.ringRadiusOuter),
         data.themeColorR
           ? {
               r: parseFloat(data.themeColorR),
