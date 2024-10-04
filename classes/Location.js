@@ -2,6 +2,7 @@ import DB from "./Database.js";
 import * as THREE from "three";
 import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 import Ctrls from "./Controls.js";
+import { icon } from "../icons.js";
 
 export default class Location {
   constructor(name, type, parentBody, parentStar, coordinatesRel, isPrivate, isQuantum, affiliation, themeImage, wikiLink) {
@@ -29,10 +30,17 @@ export default class Location {
     this.DOMLabelContainer = container;
     // element.addEventListener()
     const markerEle = document.createElement("div");
+    markerEle.className = "icon";
     container.insertAdjacentElement("beforeend", markerEle);
+
+    if (["Landing zone", "Space station"].includes(this.type)) {
+      container.className += " large";
+      markerEle.insertAdjacentElement("beforeend", icon(this.type.split(" ").join("_")));
+    }
+
     const labelObj = new CSS2DObject(container);
     labelObj.position.set(this.coordinatesRel.x, this.coordinatesRel.y, this.coordinatesRel.z);
-    labelObj.center.set(0.5, 1.5);
+    labelObj.center.set(0.5, 0.5);
 
     this.label = labelObj;
     this.parentBody.meshBody.add(this.label);
