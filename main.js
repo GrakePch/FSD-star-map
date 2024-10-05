@@ -32,7 +32,7 @@ camera.position.set(0, 70000000, -50000000);
 controls.update();
 
 /* Ambient light */
-const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0);
 scene.add(ambientLight);
 
 var rootBody = null;
@@ -65,6 +65,14 @@ function animate() {
   if (rootBody) {
     rootBody.updateRotationRecur();
     rootBody.updateLabel();
+
+    if (UI.controlTarget && controls.getDistance() < Math.max(UI.controlTarget.bodyRadius * 5, 1000)) {
+      ambientLight.intensity = THREE.MathUtils.lerp(ambientLight.intensity, .5, 0.1);
+      rootBody.lightSource.intensity = THREE.MathUtils.lerp(rootBody.lightSource.intensity, 3, 0.1);
+    } else {
+      ambientLight.intensity = THREE.MathUtils.lerp(ambientLight.intensity, 0, 0.1);
+      rootBody.lightSource.intensity = THREE.MathUtils.lerp(rootBody.lightSource.intensity, 5, 0.1);
+    }
   }
   if (UI.controlTarget) {
     UI.controlTarget.updateLocationVisibility();

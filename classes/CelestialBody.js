@@ -57,6 +57,7 @@ export default class CelestialBody {
     if (this.type === "Star") {
       this.#createMeshSphere(0xffffaa, 0xffffaa);
       const light = new THREE.PointLight(0xffffff, 5, 0, 0);
+      this.lightSource = light;
       this.meshBody.add(light);
     }
     if (this.type === "Planet") {
