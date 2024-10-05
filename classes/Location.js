@@ -78,12 +78,13 @@ export default class Location {
   checkIfAtFrontOfSphere() {
     const raycaster = new THREE.Raycaster();
     const pos = new THREE.Vector3();
-    this.parentBody.meshBody.getWorldPosition(pos);
+    this.label.getWorldPosition(pos);
     if (this.distanceToParentCenter < this.parentBody.bodyRadius) {
-      let normalizedLocation = this.label.position.clone().normalize();
-      pos.add(normalizedLocation.multiplyScalar(this.parentBody.bodyRadius));
-    } else {
-      pos.add(this.label.position);
+      let parentPos = new THREE.Vector3();
+      this.parentBody.meshBody.getWorldPosition(parentPos);
+      pos.sub(parentPos).normalize();
+      pos.multiplyScalar(this.parentBody.bodyRadius);
+      pos.add(parentPos);
     }
     const dir = new THREE.Vector3().copy(pos).sub(Ctrls.camera.position).normalize().negate();
     raycaster.set(pos, dir);
