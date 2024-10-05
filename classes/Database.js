@@ -135,8 +135,8 @@ class Database {
           y: parseFloat(data.coordinateZ),
           z: parseFloat(data.coordinateY),
         },
-        data.private,
-        data.quantum,
+        parseInt(data.private),
+        parseInt(data.quantum),
         data.affliation,
         data.themeImage,
         data.wikiLink

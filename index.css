@@ -50,6 +50,7 @@ body {
     width: 0;
     height: 0;
     --icon-size: 4px;
+    cursor: pointer;
 }
 
 .label-location.hide {
@@ -71,7 +72,7 @@ body {
 }
 
 .label-location:hover .icon {
-    background-color: var(--color-highlight);
+    filter: brightness(.8)
 }
 
 .label-location .icon {
@@ -79,15 +80,25 @@ body {
     align-items: center;
     justify-content: center;
     position: absolute;
-    width: var(--icon-size);
-    height: var(--icon-size);
-    background-color: #fff;
-    outline: 1px solid #222;
+    width: calc(var(--icon-size) + 4px);
+    height: calc(var(--icon-size) + 4px);
+    background-color: #78909c;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 2px 0px #00000080;
     border-radius: 50%;
     top: 0;
     left: 0;
     transform: translate(-50%, -50%);
+}
 
+.label-location .icon>svg {
+    fill: #fff;
+    width: calc(var(--icon-size) - 2px);
+    height: calc(var(--icon-size) - 2px);
+}
+
+.label-location.medium {
+    --icon-size: 16px;
 }
 
 .label-location.large .label {
@@ -99,10 +110,6 @@ body {
     --icon-size: 20px;
 }
 
-.label-location.large .icon>svg {
-    width: calc(var(--icon-size) - 2px);
-    height: calc(var(--icon-size) - 2px);
-}
 
 #targeting-body {
     text-align: center;

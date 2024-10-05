@@ -305,11 +305,11 @@ export default class CelestialBody {
 
         // Calculate the target position: a point at a distance of dynamicDistance in the current direction
         targetPosition = objectPosition.clone().add(directionToCamera.multiplyScalar(dynamicDistance));
-        
+
         // Calculate the direction vector from the celestial body to the sun
         const sunPosition = new THREE.Vector3(0, 0, 0); // Assuming the sun is at the origin
         const directionToSun = sunPosition.clone().sub(objectPosition).normalize();
-        
+
         // Apply a small offset towards the sun direction
         const sunOffset = directionToSun.multiplyScalar(100); // Adjust the offset as needed
         targetPosition.add(sunOffset);
@@ -326,7 +326,7 @@ export default class CelestialBody {
       if (distanceToTarget < minDistanceThreshold) {
         Ctrls.camera.position.copy(targetPosition);
         Ctrls.controls.target.copy(targetObjectPosition);
-        
+
         // Ensure the camera is aimed at the target position
         Ctrls.camera.lookAt(this.meshBody.position);
         return; // Interrupt the animation
@@ -347,7 +347,7 @@ export default class CelestialBody {
       // Animation function
       const animate = (time) => {
         if (!isAnimating) {
-          window.removeEventListener('mousedown', stopAnimation);
+          window.removeEventListener("mousedown", stopAnimation);
           return;
         }
 
@@ -378,7 +378,7 @@ export default class CelestialBody {
           Ctrls.controls.target.copy(targetObjectPosition);
           // Ensure the camera is aimed at the target position
           Ctrls.camera.lookAt(this.meshBody.position);
-          window.removeEventListener('mousedown', stopAnimation);
+          window.removeEventListener("mousedown", stopAnimation);
           return; // Interrupt the animation
         }
 
@@ -391,14 +391,14 @@ export default class CelestialBody {
 
           // Force the camera to aim at the center of the celestial body to ensure the final position is correct
           Ctrls.controls.target.copy(this.meshBody.position);
-          window.removeEventListener('mousedown', stopAnimation);
+          window.removeEventListener("mousedown", stopAnimation);
         }
       };
 
       // Start animation and add mouse event listener after 0.1 seconds
       setTimeout(() => {
         if (isAnimating) {
-          window.addEventListener('mousedown', stopAnimation);
+          window.addEventListener("mousedown", stopAnimation);
         }
       }, 100);
 
@@ -407,56 +407,55 @@ export default class CelestialBody {
   }
 
   showCoordinatesOnHover() {
-    const coordinatesDiv = document.getElementById('coordinates');
-  
+    const coordinatesDiv = document.getElementById("coordinates");
+
     const onMouseMove = (event) => {
       // 获取鼠标位置
       const mouse = new THREE.Vector2();
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-  
+
       // 创建射线
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(mouse, Ctrls.camera);
-  
+
       // 获取当前聚焦的星球
       const focusedBody = UI.getControlTarget();
-  
+
       if (focusedBody && focusedBody.meshBody) {
         const intersects = raycaster.intersectObject(focusedBody.meshBody);
         if (intersects.length > 0) {
           const intersect = intersects[0];
           const point = intersect.point;
-  
+
           // 使用星球的原点计算相对于星球中心的坐标
           const relativePoint = point.clone().sub(focusedBody.meshBody.position);
-  
+
           // 计算经纬度
           const radius = focusedBody.bodyRadius;
           const phi = Math.acos(relativePoint.y / radius);
           const theta = Math.atan2(relativePoint.z, relativePoint.x);
-  
+
           const latitude = (phi * 180) / Math.PI - 90;
           const longitude = (theta * 180) / Math.PI;
-  
+
           // 显示经纬度信息
           const info = `纬度: ${latitude.toFixed(2)}°, 经度: ${longitude.toFixed(2)}°`;
           coordinatesDiv.innerHTML = info;
-          coordinatesDiv.style.display = 'block';
+          coordinatesDiv.style.display = "block";
           coordinatesDiv.style.left = `${event.clientX + 10}px`;
           coordinatesDiv.style.top = `${event.clientY + 10}px`;
-  
+
           return;
         }
       }
-  
-      coordinatesDiv.style.display = 'none';
+
+      coordinatesDiv.style.display = "none";
     };
-  
+
     // 添加鼠标移动事件侦听器
-    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener("mousemove", onMouseMove);
   }
-  
 
   showLabel(show) {
     const labelEle = this.label.element;
@@ -501,13 +500,21 @@ export default class CelestialBody {
     }
   }
 
+  showLocationsOrbit(show) {
+    for (const location of this.locations) {
+      location.showOrbit(show);
+    }
+  }
+
   updateLocationVisibility() {
     if (Ctrls.controls.getDistance() < Math.max(this.bodyRadius * 5, 1000)) {
       for (const location of this.locations) {
         location.showLabel(location.checkIfAtFrontOfSphere());
       }
+      this.showLocationsOrbit(true);
     } else {
       this.showLocations(false);
+      this.showLocationsOrbit(false);
     }
   }
 
