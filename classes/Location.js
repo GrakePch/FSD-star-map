@@ -78,7 +78,13 @@ export default class Location {
   checkIfAtFrontOfSphere() {
     const raycaster = new THREE.Raycaster();
     const pos = new THREE.Vector3();
-    this.label.getWorldPosition(pos);
+    this.parentBody.meshBody.getWorldPosition(pos);
+    if (this.distanceToParentCenter < this.parentBody.bodyRadius) {
+      let normalizedLocation = this.label.position.clone().normalize();
+      pos.add(normalizedLocation.multiplyScalar(this.parentBody.bodyRadius));
+    } else {
+      pos.add(this.label.position);
+    }
     const dir = new THREE.Vector3().copy(pos).sub(Ctrls.camera.position).normalize().negate();
     raycaster.set(pos, dir);
     const intersects = raycaster.intersectObject(this.parentBody.meshBody, false);
@@ -147,6 +153,7 @@ const labelAppearances = {
   "Distribution center": {
     icon: "distribution_center",
     size: "M",
+    color: "#0597ff",
   },
   Settlement: {
     icon: "settlement",
@@ -174,5 +181,9 @@ const labelAppearances = {
     icon: "prison",
     size: "M",
     color: "#ff8126",
+  },
+  City: {
+    size: "M",
+    color: "#0597ff",
   },
 };
