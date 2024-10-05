@@ -7,7 +7,7 @@ import UI from "./UI.js";
 import { icon } from "../icons.js";
 
 export default class CelestialBody {
-  constructor(name, type, ordinal, parentBody, parentStar, coordinates, rotationQuanternion, bodyRadius, rotationRate, rotationCorrection, orbitAngle, orbitalRadius, themeColor) {
+  constructor(name, type, ordinal, parentBody, parentStar, coordinates, rotationQuanternion, bodyRadius, rotationRate, rotationCorrection, orbitAngle, orbitalRadius, ringRadiusInner, ringRadiusOuter, themeColor) {
     this.name = name;
     this.type = type;
     this.ordinal = ordinal;
@@ -20,6 +20,8 @@ export default class CelestialBody {
     this.rotationCorrection = rotationCorrection || 0;
     this.orbitAngle = orbitAngle;
     this.orbitalRadius = orbitalRadius;
+    this.ringRadiusInner = ringRadiusInner;
+    this.ringRadiusOuter = ringRadiusOuter;
     this.themeColor = themeColor;
 
     this.lengthOfDay = (3600 * this.rotationRate) / 86400;
@@ -28,14 +30,6 @@ export default class CelestialBody {
     this.childBodies = Array();
     this.locations = Array();
 
-    //TODO: consider parent as [0, 0, 0], which is a temporary
-    // console.log(this.name)
-    // console.log(this.coordinates.y)
-    // console.log(euclideanDist({
-    //   x: this.coordinates.x,
-    //   y: this.coordinates.y,
-    //   z: this.coordinates.z,
-    // }))
     this.orbitalInclination = THREE.MathUtils.radToDeg(
       Math.atan(
         this.coordinates.y /
@@ -81,6 +75,8 @@ export default class CelestialBody {
       this.#createMeshOrbit([0, 0, 0], 0x404040);
       this.meshGroup.attach(this.meshOrbit);
     }
+
+    this.#createMeshRing();
 
     this.#createLabel();
 
@@ -140,6 +136,30 @@ export default class CelestialBody {
 
     this.meshOrbit = meshOrbit;
     this.meshGroup.attach(this.meshOrbit);
+  }
+
+  #createMeshRing() {
+    if (!(this.ringRadiusInner && this.ringRadiusOuter)) return;
+    let tex = new THREE.TextureLoader().load(`./public/textures/rings/asteroid_ring_yela_diff.png`);
+    const geometry = new THREE.RingGeometry(this.ringRadiusInner, this.ringRadiusOuter, 100);
+    var pos = geometry.attributes.position;
+    var v3 = new THREE.Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      v3.fromBufferAttribute(pos, i);
+      geometry.attributes.uv.setXY(i, 1, v3.length() < (this.ringRadiusInner + this.ringRadiusOuter) / 2 ? 0 : 1);
+    }
+
+    const material = new THREE.MeshStandardMaterial({
+      map: tex,
+      side: THREE.DoubleSide,
+      transparent: true,
+      emissive: 0x8cc2ff,
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.rotateX(Math.PI / 2);
+
+    this.meshRing = mesh;
+    this.meshBody.add(mesh);
   }
 
   #createLabel() {
@@ -285,11 +305,11 @@ export default class CelestialBody {
 
         // Calculate the target position: a point at a distance of dynamicDistance in the current direction
         targetPosition = objectPosition.clone().add(directionToCamera.multiplyScalar(dynamicDistance));
-        
+
         // Calculate the direction vector from the celestial body to the sun
         const sunPosition = new THREE.Vector3(0, 0, 0); // Assuming the sun is at the origin
         const directionToSun = sunPosition.clone().sub(objectPosition).normalize();
-        
+
         // Apply a small offset towards the sun direction
         const sunOffset = directionToSun.multiplyScalar(100); // Adjust the offset as needed
         targetPosition.add(sunOffset);
@@ -306,7 +326,7 @@ export default class CelestialBody {
       if (distanceToTarget < minDistanceThreshold) {
         Ctrls.camera.position.copy(targetPosition);
         Ctrls.controls.target.copy(targetObjectPosition);
-        
+
         // Ensure the camera is aimed at the target position
         Ctrls.camera.lookAt(this.meshBody.position);
         return; // Interrupt the animation
@@ -327,7 +347,7 @@ export default class CelestialBody {
       // Animation function
       const animate = (time) => {
         if (!isAnimating) {
-          window.removeEventListener('mousedown', stopAnimation);
+          window.removeEventListener("mousedown", stopAnimation);
           return;
         }
 
@@ -358,7 +378,7 @@ export default class CelestialBody {
           Ctrls.controls.target.copy(targetObjectPosition);
           // Ensure the camera is aimed at the target position
           Ctrls.camera.lookAt(this.meshBody.position);
-          window.removeEventListener('mousedown', stopAnimation);
+          window.removeEventListener("mousedown", stopAnimation);
           return; // Interrupt the animation
         }
 
@@ -371,14 +391,14 @@ export default class CelestialBody {
 
           // Force the camera to aim at the center of the celestial body to ensure the final position is correct
           Ctrls.controls.target.copy(this.meshBody.position);
-          window.removeEventListener('mousedown', stopAnimation);
+          window.removeEventListener("mousedown", stopAnimation);
         }
       };
 
       // Start animation and add mouse event listener after 0.1 seconds
       setTimeout(() => {
         if (isAnimating) {
-          window.addEventListener('mousedown', stopAnimation);
+          window.addEventListener("mousedown", stopAnimation);
         }
       }, 100);
 
@@ -387,59 +407,69 @@ export default class CelestialBody {
   }
 
   showCoordinatesOnHover() {
-    const coordinatesDiv = document.getElementById('coordinates');
-  
+    const coordinatesDiv = document.getElementById("coordinates");
+
     const onMouseMove = (event) => {
       // 获取鼠标位置
       const mouse = new THREE.Vector2();
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-  
+
       // 创建射线
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(mouse, Ctrls.camera);
-  
+
       // 获取当前聚焦的星球
       const focusedBody = UI.getControlTarget();
-  
+
       if (focusedBody && focusedBody.meshBody) {
         const intersects = raycaster.intersectObject(focusedBody.meshBody);
         if (intersects.length > 0) {
           const intersect = intersects[0];
           const point = intersect.point;
-  
+
           // 使用星球的原点计算相对于星球中心的坐标
           const relativePoint = point.clone().sub(focusedBody.meshBody.position);
-  
+
           // 计算经纬度
           const radius = focusedBody.bodyRadius;
           const phi = Math.acos(relativePoint.y / radius);
           const theta = Math.atan2(relativePoint.z, relativePoint.x);
-  
+
           const latitude = (phi * 180) / Math.PI - 90;
+<<<<<<< HEAD
           let longitude = (theta * 180) / Math.PI + 200; // 移动60度
   
           // 归一化经度到-180到180度之间
           longitude = ((longitude + 180) % 360 + 360) % 360 - 180;
   
+=======
+          const longitude = (theta * 180) / Math.PI;
+
+>>>>>>> 4703418b664d5b9b1b9bb20190a0e59bd39a839a
           // 显示经纬度信息
           const info = `纬度: ${latitude.toFixed(2)}°, 经度: ${longitude.toFixed(2)}°`;
           coordinatesDiv.innerHTML = info;
-          coordinatesDiv.style.display = 'block';
+          coordinatesDiv.style.display = "block";
           coordinatesDiv.style.left = `${event.clientX + 10}px`;
           coordinatesDiv.style.top = `${event.clientY + 10}px`;
-  
+
           return;
         }
       }
-  
-      coordinatesDiv.style.display = 'none';
+
+      coordinatesDiv.style.display = "none";
     };
-  
+
     // 添加鼠标移动事件侦听器
+<<<<<<< HEAD
     window.addEventListener('mousemove', onMouseMove);
 }
   
+=======
+    window.addEventListener("mousemove", onMouseMove);
+  }
+>>>>>>> 4703418b664d5b9b1b9bb20190a0e59bd39a839a
 
   showLabel(show) {
     const labelEle = this.label.element;
@@ -484,13 +514,21 @@ export default class CelestialBody {
     }
   }
 
+  showLocationsOrbit(show) {
+    for (const location of this.locations) {
+      location.showOrbit(show);
+    }
+  }
+
   updateLocationVisibility() {
     if (Ctrls.controls.getDistance() < Math.max(this.bodyRadius * 5, 1000)) {
       for (const location of this.locations) {
         location.showLabel(location.checkIfAtFrontOfSphere());
       }
+      this.showLocationsOrbit(true);
     } else {
       this.showLocations(false);
+      this.showLocationsOrbit(false);
     }
   }
 
