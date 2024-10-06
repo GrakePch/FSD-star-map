@@ -7,7 +7,23 @@ import UI from "./UI.js";
 import { icon } from "../icons.js";
 
 export default class CelestialBody {
-  constructor(name, type, ordinal, parentBody, parentStar, coordinates, rotationQuanternion, bodyRadius, rotationRate, rotationCorrection, orbitAngle, orbitalRadius, ringRadiusInner, ringRadiusOuter, themeColor, themeImage) {
+  constructor(
+    name,
+    type,
+    ordinal,
+    parentBody,
+    parentStar,
+    coordinates,
+    rotationQuanternion,
+    bodyRadius,
+    rotationRate,
+    rotationCorrection,
+    orbitAngle,
+    orbitalRadius,
+    ringRadiusInner,
+    ringRadiusOuter,
+    themeColor, themeImage
+  ) {
     this.name = name;
     this.type = type;
     this.ordinal = ordinal;
@@ -63,7 +79,9 @@ export default class CelestialBody {
     }
     if (this.type === "Planet") {
       this.#createMeshSphere(0xffffff);
-      const color = this.themeColor ? `rgb(${this.themeColor.r}, ${this.themeColor.g}, ${this.themeColor.b})` : 0xffffff;
+      const color = this.themeColor
+        ? `rgb(${this.themeColor.r}, ${this.themeColor.g}, ${this.themeColor.b})`
+        : 0xffffff;
       this.#createMeshOrbit([0, 0, 0], color);
     }
     if (this.type === "Moon") {
@@ -112,7 +130,10 @@ export default class CelestialBody {
 
   #createMeshSphere(color, emissive) {
     const geometry = new THREE.SphereGeometry(this.bodyRadius, 100, 50);
-    const material = new THREE.MeshStandardMaterial({ color: color, emissive: emissive ? emissive : null });
+    const material = new THREE.MeshStandardMaterial({
+      color: color,
+      emissive: emissive ? emissive : null,
+    });
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.set(...this.getPosition());
 
@@ -123,7 +144,16 @@ export default class CelestialBody {
   #createMeshOrbit(position, color) {
     const geoCircle = new THREE.CircleGeometry(this.orbitalRadius, 2000);
     const itemSize = 3;
-    geoCircle.setAttribute("position", new THREE.BufferAttribute(geoCircle.attributes.position.array.slice(itemSize, geoCircle.attributes.position.array.length - itemSize), itemSize));
+    geoCircle.setAttribute(
+      "position",
+      new THREE.BufferAttribute(
+        geoCircle.attributes.position.array.slice(
+          itemSize,
+          geoCircle.attributes.position.array.length - itemSize
+        ),
+        itemSize
+      )
+    );
     geoCircle.index = null;
     const matCircle = new THREE.LineBasicMaterial({ color: color });
     const meshOrbit = new THREE.LineLoop(geoCircle, matCircle);
@@ -131,9 +161,17 @@ export default class CelestialBody {
     meshOrbit.position.set(...position);
 
     if (this.orbitalInclination != 0) {
-      let rotAxis = new THREE.Vector3(this.coordinates.x, this.coordinates.y, this.coordinates.z);
+      let rotAxis = new THREE.Vector3(
+        this.coordinates.x,
+        this.coordinates.y,
+        this.coordinates.z
+      );
       rotAxis.cross(new THREE.Vector3(0, this.coordinates.y, 0)).normalize();
-      meshOrbit.rotateOnWorldAxis(rotAxis, (this.coordinates.y > 0 ? 1 : -1) * THREE.MathUtils.degToRad(this.orbitalInclination));
+      meshOrbit.rotateOnWorldAxis(
+        rotAxis,
+        (this.coordinates.y > 0 ? 1 : -1) *
+          THREE.MathUtils.degToRad(this.orbitalInclination)
+      );
     }
 
     this.meshOrbit = meshOrbit;
@@ -142,13 +180,23 @@ export default class CelestialBody {
 
   #createMeshRing() {
     if (!(this.ringRadiusInner && this.ringRadiusOuter)) return;
-    let tex = new THREE.TextureLoader().load(`./public/textures/rings/asteroid_ring_yela_diff.png`);
-    const geometry = new THREE.RingGeometry(this.ringRadiusInner, this.ringRadiusOuter, 100);
+    let tex = new THREE.TextureLoader().load(
+      `./public/textures/rings/asteroid_ring_yela_diff.png`
+    );
+    const geometry = new THREE.RingGeometry(
+      this.ringRadiusInner,
+      this.ringRadiusOuter,
+      100
+    );
     var pos = geometry.attributes.position;
     var v3 = new THREE.Vector3();
     for (let i = 0; i < pos.count; i++) {
       v3.fromBufferAttribute(pos, i);
-      geometry.attributes.uv.setXY(i, 1, v3.length() < (this.ringRadiusInner + this.ringRadiusOuter) / 2 ? 0 : 1);
+      geometry.attributes.uv.setXY(
+        i,
+        1,
+        v3.length() < (this.ringRadiusInner + this.ringRadiusOuter) / 2 ? 0 : 1
+      );
     }
 
     const material = new THREE.MeshStandardMaterial({
@@ -178,7 +226,10 @@ export default class CelestialBody {
   }
 
   #createElevationLine() {
-    const points = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -this.coordinates.y, 0)];
+    const points = [
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, -this.coordinates.y, 0),
+    ];
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
     const material = new THREE.LineBasicMaterial({ color: 0x222222 });
     const elevationLine = new THREE.Line(geometry, material);
@@ -197,7 +248,9 @@ export default class CelestialBody {
     if (!["Planet", "Moon"].includes(this.type)) return;
     const textureLoader = new THREE.TextureLoader();
     textureLoader.load(
-      `./public/textures/${loadHD ? "bodies-hd" : "bodies"}/${this.name.toLowerCase()}.webp`,
+      `./public/textures/${
+        loadHD ? "bodies-hd" : "bodies"
+      }/${this.name.toLowerCase()}.webp`,
       (t) => {
         t.colorSpace = THREE.SRGBColorSpace;
         this.meshBody.material.map = t;
@@ -224,7 +277,13 @@ export default class CelestialBody {
     var wrapper = document.createElement("div");
 
     if (layer === 1 && this.childBodies.length > 0) {
-      wrapper.innerHTML = `<div class="indent-1 ${this.type.split(" ").join("_")}"><button><div class="thumbnail" style="background-image: url('public/thumbnails/${this.name}.png')"></div>
+      wrapper.innerHTML = `<div class="indent-1 ${this.type
+        .split(" ")
+        .join(
+          "_"
+        )}"><button><div class="thumbnail" style="background-image: url('public/thumbnails/${
+        this.name
+      }.png')"></div>
         <div>
           <p>${this.name}</p>
           <p class="sub">${this.type}</p>
@@ -255,7 +314,13 @@ export default class CelestialBody {
       element.insertAdjacentElement("beforeend", el);
       element = el;
     } else {
-      wrapper.innerHTML = `<div class="indent-${layer} ${this.type.split(" ").join("_")}"><button><div class="thumbnail" style="background-image: url('public/thumbnails/${this.name}.png')"></div>
+      wrapper.innerHTML = `<div class="indent-${layer} ${this.type
+        .split(" ")
+        .join(
+          "_"
+        )}"><button><div class="thumbnail" style="background-image: url('public/thumbnails/${
+        this.name
+      }.png')"></div>
           <div>
             <p>${this.name}</p>
             <p class="sub">${this.type}</p>
@@ -271,11 +336,17 @@ export default class CelestialBody {
     }
 
     if (this.type === "Star" || this.type === "Jump Point") {
-      this.DOMButton.firstChild.insertAdjacentElement("beforeend", icon(this.type.split(" ").join("_")));
+      this.DOMButton.firstChild.insertAdjacentElement(
+        "beforeend",
+        icon(this.type.split(" ").join("_"))
+      );
     }
 
     if (this.type === "Lagrange Point") {
-      this.DOMButton.firstChild.insertAdjacentElement("beforeend", icon("rhombus"));
+      this.DOMButton.firstChild.insertAdjacentElement(
+        "beforeend",
+        icon("rhombus")
+      );
     }
 
     for (const childBody of this.childBodies) {
@@ -309,14 +380,22 @@ export default class CelestialBody {
         const dynamicDistance = Math.max(this.bodyRadius, 300) * 3;
 
         // Calculate the direction vector from the camera to the center of the celestial body
-        const directionToCamera = cameraPosition.clone().sub(objectPosition).normalize();
+        const directionToCamera = cameraPosition
+          .clone()
+          .sub(objectPosition)
+          .normalize();
 
         // Calculate the target position: a point at a distance of dynamicDistance in the current direction
-        targetPosition = objectPosition.clone().add(directionToCamera.multiplyScalar(dynamicDistance));
+        targetPosition = objectPosition
+          .clone()
+          .add(directionToCamera.multiplyScalar(dynamicDistance));
 
         // Calculate the direction vector from the celestial body to the sun
         const sunPosition = new THREE.Vector3(0, 0, 0); // Assuming the sun is at the origin
-        const directionToSun = sunPosition.clone().sub(objectPosition).normalize();
+        const directionToSun = sunPosition
+          .clone()
+          .sub(objectPosition)
+          .normalize();
 
         // Apply a small offset towards the sun direction
         const sunOffset = directionToSun.multiplyScalar(100); // Adjust the offset as needed
@@ -364,23 +443,32 @@ export default class CelestialBody {
 
         // Use the easing function to calculate the transition of the camera position
         const easedPositionT = easeOutQuint(t);
-        const newPosition = currentPosition.clone().lerp(targetPosition, easedPositionT);
+        const newPosition = currentPosition
+          .clone()
+          .lerp(targetPosition, easedPositionT);
         Ctrls.camera.position.copy(newPosition);
 
         // Dynamically calculate the camera's rotation to ensure it is always aimed at the target position
         const targetQuaternion = new THREE.Quaternion();
-        const lookAtMatrix = new THREE.Matrix4().lookAt(Ctrls.camera.position, this.meshBody.position, Ctrls.camera.up);
+        const lookAtMatrix = new THREE.Matrix4().lookAt(
+          Ctrls.camera.position,
+          this.meshBody.position,
+          Ctrls.camera.up
+        );
         targetQuaternion.setFromRotationMatrix(lookAtMatrix);
 
         // Perform rotation interpolation (SLERP)
         Ctrls.camera.quaternion.slerp(targetQuaternion, t);
 
         // Interpolate the controller's target position
-        const newTarget = currentTarget.clone().lerp(targetObjectPosition, easedPositionT);
+        const newTarget = currentTarget
+          .clone()
+          .lerp(targetObjectPosition, easedPositionT);
         Ctrls.controls.target.copy(newTarget);
 
         // Check the distance between the camera and the target each frame, if close enough, interrupt the animation and teleport
-        const currentDistance = Ctrls.camera.position.distanceTo(targetPosition);
+        const currentDistance =
+          Ctrls.camera.position.distanceTo(targetPosition);
         if (currentDistance < minDistanceThreshold) {
           Ctrls.camera.position.copy(targetPosition);
           Ctrls.controls.target.copy(targetObjectPosition);
@@ -414,59 +502,184 @@ export default class CelestialBody {
     };
   }
 
-  showCoordinatesOnHover() {
+   showCoordinatesOnHover() {
     const coordinatesDiv = document.getElementById("coordinates");
 
-    const onMouseMove = (event) => {
-      // 获取鼠标位置
-      const mouse = new THREE.Vector2();
-      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    // Save mouse position
+    const mouse = new THREE.Vector2();
 
-      // 创建射线
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouse, Ctrls.camera);
+    // Update mouse position
+    window.addEventListener("mousemove", (event) => {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    });
 
-      // 获取当前聚焦的星球
-      const focusedBody = UI.getControlTarget();
+    const updateCoordinates = () => {
+        // Create raycaster
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(mouse, Ctrls.camera);
 
-      if (focusedBody && focusedBody.meshBody) {
-        const intersects = raycaster.intersectObject(focusedBody.meshBody);
-        if (intersects.length > 0) {
-          const intersect = intersects[0];
-          const point = intersect.point;
+        // Get the currently focused celestial body
+        const focusedBody = UI.getControlTarget();
 
-          // 使用星球的原点计算相对于星球中心的坐标
-          const relativePoint = point.clone().sub(focusedBody.meshBody.position);
+        if (focusedBody && focusedBody.meshBody) {
+            const intersects = raycaster.intersectObject(focusedBody.meshBody);
+            if (intersects.length > 0) {
+                const intersect = intersects[0];
+                const point = intersect.point.clone(); // World coordinates of the mouse click
 
-          // 计算经纬度
-          const radius = focusedBody.bodyRadius;
-          const phi = Math.acos(relativePoint.y / radius);
-          const theta = Math.atan2(relativePoint.z, relativePoint.x);
+                // Convert world coordinates to the celestial body's local coordinates
+                const localPoint = focusedBody.meshBody.worldToLocal(point.clone());
 
-          const latitude = (phi * 180) / Math.PI - 90;
-          let longitude = (theta * 180) / Math.PI + 200; // 移动60度
+                // Calculate latitude and longitude
+                const radius = focusedBody.bodyRadius;
+                const phi = Math.acos(localPoint.y / radius); // Polar angle
+                let theta = Math.atan2(localPoint.z, localPoint.x); // Azimuthal angle
+                theta = -theta; // Reverse theta to match the planet's rotation
+                const latitude = (phi * 180) / Math.PI - 90; // Latitude
+                let longitude = (theta * 180) / Math.PI; // Longitude
+                longitude = longitude - 180; // 保持偏移修正
 
-          // 归一化经度到-180到180度之间
-          longitude = ((((longitude + 180) % 360) + 360) % 360) - 180;
+                // Normalize longitude to be within -180 to 180 degrees
+                if (longitude < -180) {
+                    longitude += 360;
+                } else if (longitude > 180) {
+                    longitude -= 360;
+                }
 
-          // 显示经纬度信息
-          const info = `纬度: ${latitude.toFixed(2)}°, 经度: ${longitude.toFixed(2)}°`;
-          coordinatesDiv.innerHTML = info;
-          coordinatesDiv.style.display = "block";
-          coordinatesDiv.style.left = `${event.clientX + 10}px`;
-          coordinatesDiv.style.top = `${event.clientY + 10}px`;
+                // Get time until sunrise or sunset, passing absolute coordinates
+                const surfaceTime = focusedBody.getTimeUntilSunriseOrSunset(point);
 
-          return;
+                // Display latitude, longitude, and surface time information
+                const info = `Latitude: ${latitude.toFixed(2)}°, Longitude: ${longitude.toFixed(2)}°, ${surfaceTime}`;
+                coordinatesDiv.innerHTML = info;
+                coordinatesDiv.style.display = "block";
+                coordinatesDiv.style.left = `${((mouse.x + 1) * window.innerWidth) / 2 + 10}px`;
+                coordinatesDiv.style.top = `${((-mouse.y + 1) * window.innerHeight) / 2 + 10}px`;
+
+                return;
+            }
         }
-      }
 
-      coordinatesDiv.style.display = "none";
+        // If no celestial body is focused or no intersection, hide the coordinates information
+        coordinatesDiv.style.display = "none";
     };
 
-    // 添加鼠标移动事件侦听器
-    window.addEventListener("mousemove", onMouseMove);
+    // Add update to the animation loop
+    const animate = () => {
+        requestAnimationFrame(animate);
+
+        // Update coordinates display
+        updateCoordinates();
+    };
+
+    animate(); // Start the animation loop
+}
+
+
+getTimeUntilSunriseOrSunset(mousePosition) {
+  if (this.lengthOfDay === 0) {
+      return "00:00:00";
   }
+
+  // Ensure the rotation state is up-to-date
+  this.updateRotationRecur();
+
+  // Calculate the planet's angular speed (radians per second)
+  const angularSpeed = (2 * Math.PI) / (this.lengthOfDay * 24 * 3600);
+
+  if (angularSpeed === 0) {
+      return "00:00:00";
+  }
+
+  // Get the direction vector of the star in the planet's local coordinate system
+  const sunDirectionWorld = this.parentStar.meshBody.getWorldPosition(new THREE.Vector3())
+      .sub(this.meshBody.getWorldPosition(new THREE.Vector3()))
+      .normalize();
+  const sunDirectionLocal = sunDirectionWorld.applyQuaternion(this.meshBody.quaternion.clone().invert());
+
+  // Calculate the longitude and latitude of the subsolar point
+  const subsolarLongitude = Math.atan2(sunDirectionLocal.z, sunDirectionLocal.x);
+  const subsolarLatitude = Math.asin(sunDirectionLocal.y);
+
+  // Convert the mouse click world coordinates to the planet's local coordinates
+  const localPoint = this.meshBody.worldToLocal(mousePosition.clone()).normalize();
+
+  // Calculate the longitude and latitude of the given point
+  const longitude = Math.atan2(localPoint.z, localPoint.x);
+  const latitude = Math.asin(localPoint.y);
+
+  // Adjust the hour angle calculation, reverse the hour angle to correct the sunrise and sunset positions
+  let hourAngle = subsolarLongitude - longitude;
+
+  // Normalize to [-π, π]
+  hourAngle = ((hourAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
+
+  // Calculate the cosine of the zenith angle
+  const cosZenithAngle = Math.sin(subsolarLatitude) * Math.sin(latitude) + Math.cos(subsolarLatitude) * Math.cos(latitude) * Math.cos(hourAngle);
+
+  // Determine if the point is in daylight
+  const isInSunlight = cosZenithAngle > 0;
+
+  // Calculate the hour angle of sunrise/sunset
+  const cosH0 = -Math.tan(subsolarLatitude) * Math.tan(latitude);
+
+  let H0;
+  if (cosH0 >= 1) {
+      // The sun is always below the horizon, never rises
+      return "The sun never rises - Local time: --:--:--";
+  } else if (cosH0 <= -1) {
+      // The sun is always above the horizon, never sets
+      return "The sun never sets - Local time: --:--:--";
+  } else {
+      H0 = Math.acos(cosH0);
+  }
+
+  let eventType;
+  let angleUntilEvent;
+
+  if (isInSunlight) {
+      // Currently in daylight, calculate the time until sunset
+      eventType = "Time until sunset";
+      angleUntilEvent = hourAngle - H0;
+  } else {
+      // Currently at night, calculate the time until sunrise
+      eventType = "Time until sunrise";
+      angleUntilEvent = hourAngle + H0;
+  }
+
+  // Normalize angleUntilEvent to [-π, π]
+  angleUntilEvent = ((angleUntilEvent + Math.PI) % (2 * Math.PI)) - Math.PI;
+
+  // Calculate the time until the event
+  let timeUntilEvent = -angleUntilEvent / angularSpeed; // Since the angle decreases, time increases, so take the negative value
+
+  // If the time is negative, add a full rotation period
+  if (timeUntilEvent < 0) {
+      timeUntilEvent += this.lengthOfDay * 24 * 3600;
+  }
+
+  // Calculate local time, the subsolar point is at 12:00
+  let localTimeHours = ((hourAngle + Math.PI) / (2 * Math.PI)) * 24;
+
+  // Normalize local time to [0, 24)
+  localTimeHours = (localTimeHours + 24) % 24;
+
+  // Format local time as HH:MM:SS
+  const localHours = Math.floor(localTimeHours);
+  const localMinutes = Math.floor((localTimeHours % 1) * 60);
+  const localSeconds = Math.floor(((localTimeHours * 3600) % 60));
+
+  // Format the time until the event
+  const hours = Math.floor(timeUntilEvent / 3600);
+  const minutes = Math.floor((timeUntilEvent % 3600) / 60);
+  const seconds = Math.floor(timeUntilEvent % 60);
+
+  const pad = (num) => String(Math.floor(num)).padStart(2, '0');
+
+  // Return the event type, time until the event, and local time
+  return `${eventType} ${pad(hours)}:${pad(minutes)}:${pad(seconds)} - Local time: ${pad(localHours)}:${pad(localMinutes)}:${pad(localSeconds)}`;
+}
 
   showLabel(show) {
     const labelEle = this.label.element;
@@ -475,20 +688,33 @@ export default class CelestialBody {
   }
 
   updateLabel() {
-    if (Ctrls.controls.getDistance() > (UI.controlTarget ? UI.controlTarget.bodyRadius * 5 : 0)) {
+    if (
+      Ctrls.controls.getDistance() >
+      (UI.controlTarget ? UI.controlTarget.bodyRadius * 5 : 0)
+    ) {
       if (this.parentBody && UI.controlTarget !== this) {
         const labelEle = this.label.element;
         const labelRect = labelEle.getBoundingClientRect();
-        const labelCenter2D = [labelRect.x + 0.5 * labelRect.width, labelRect.y + 0.5 * labelRect.height];
+        const labelCenter2D = [
+          labelRect.x + 0.5 * labelRect.width,
+          labelRect.y + 0.5 * labelRect.height,
+        ];
 
         const labelParentEle = this.parentBody.label.element;
         const labelParentRect = labelParentEle.getBoundingClientRect();
-        const labelParentCenter2D = [labelParentRect.x + 0.5 * labelParentRect.width, labelParentRect.y + 0.5 * labelParentRect.height];
+        const labelParentCenter2D = [
+          labelParentRect.x + 0.5 * labelParentRect.width,
+          labelParentRect.y + 0.5 * labelParentRect.height,
+        ];
 
         const thresholdDistX = (labelParentRect.width + labelRect.width) / 2;
         const thresholdDistY = (labelParentRect.height + labelRect.height) / 2;
 
-        if (Math.abs(labelCenter2D[0] - labelParentCenter2D[0]) < thresholdDistX && Math.abs(labelCenter2D[1] - labelParentCenter2D[1]) < thresholdDistY) {
+        if (
+          Math.abs(labelCenter2D[0] - labelParentCenter2D[0]) <
+            thresholdDistX &&
+          Math.abs(labelCenter2D[1] - labelParentCenter2D[1]) < thresholdDistY
+        ) {
           this.showLabel(false);
         } else {
           this.showLabel(true);
