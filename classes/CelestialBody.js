@@ -577,88 +577,109 @@ export default class CelestialBody {
 }
 
 
-  getTimeUntilSunriseOrSunset(mousePosition) {
-    if (this.lengthOfDay === 0) {
-        return "00:00:00";
-    }
+getTimeUntilSunriseOrSunset(mousePosition) {
+  if (this.lengthOfDay === 0) {
+      return "00:00:00";
+  }
 
-    // Ensure the rotation status is up-to-date
-    this.updateRotationRecur();
+  // Ensure the rotation state is up-to-date
+  this.updateRotationRecur();
 
-    // Calculate the planet's angular speed (radians per second)
-    const angularSpeed = (2 * Math.PI) / (this.lengthOfDay * 24 * 3600);
+  // Calculate the planet's angular speed (radians per second)
+  const angularSpeed = (2 * Math.PI) / (this.lengthOfDay * 24 * 3600);
 
-    if (angularSpeed === 0) {
-        return "00:00:00";
-    }
+  if (angularSpeed === 0) {
+      return "00:00:00";
+  }
 
-    // Get the star's direction vector in the planet's local coordinate system
-    const sunDirectionWorld = this.parentStar.meshBody.getWorldPosition(new THREE.Vector3())
-        .sub(this.meshBody.getWorldPosition(new THREE.Vector3()))
-        .normalize();
-    const sunDirectionLocal = sunDirectionWorld.applyQuaternion(this.meshBody.quaternion.clone().invert());
+  // Get the direction vector of the star in the planet's local coordinate system
+  const sunDirectionWorld = this.parentStar.meshBody.getWorldPosition(new THREE.Vector3())
+      .sub(this.meshBody.getWorldPosition(new THREE.Vector3()))
+      .normalize();
+  const sunDirectionLocal = sunDirectionWorld.applyQuaternion(this.meshBody.quaternion.clone().invert());
 
-    // Calculate the subsolar point's longitude
-    const subsolarLongitude = Math.atan2(sunDirectionLocal.z, sunDirectionLocal.x);
+  // Calculate the longitude and latitude of the subsolar point
+  const subsolarLongitude = Math.atan2(sunDirectionLocal.z, sunDirectionLocal.x);
+  const subsolarLatitude = Math.asin(sunDirectionLocal.y);
 
-    // Convert the mouse click's world coordinates to the planet's local coordinates
-    const localPoint = this.meshBody.worldToLocal(mousePosition.clone());
+  // Convert the mouse click world coordinates to the planet's local coordinates
+  const localPoint = this.meshBody.worldToLocal(mousePosition.clone()).normalize();
 
-    // Calculate the longitude of the given point
-    const longitude = Math.atan2(localPoint.z, localPoint.x);
+  // Calculate the longitude and latitude of the given point
+  const longitude = Math.atan2(localPoint.z, localPoint.x);
+  const latitude = Math.asin(localPoint.y);
 
-    // Calculate the longitude difference and normalize to [-π, π]
-    let deltaLongitude = subsolarLongitude - longitude; // 反转 deltaLongitude 的计算
-    deltaLongitude = ((deltaLongitude + Math.PI) % (2 * Math.PI)) - Math.PI;
+  // Adjust the hour angle calculation, reverse the hour angle to correct the sunrise and sunset positions
+  let hourAngle = subsolarLongitude - longitude;
 
-    // Determine if the point is in daylight
-    const isInSunlight = Math.abs(deltaLongitude) < Math.PI / 2;
+  // Normalize to [-π, π]
+  hourAngle = ((hourAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
 
-    let eventType;
-    let angleUntilEvent;
+  // Calculate the cosine of the zenith angle
+  const cosZenithAngle = Math.sin(subsolarLatitude) * Math.sin(latitude) + Math.cos(subsolarLatitude) * Math.cos(latitude) * Math.cos(hourAngle);
 
-    if (isInSunlight) {
-        // Currently in daylight, calculate time until sunset
-        eventType = "Sunset in";
-        angleUntilEvent = Math.PI / 2 - deltaLongitude;
-    } else {
-        // Currently in night, calculate time until sunrise
-        eventType = "Sunrise in";
-        angleUntilEvent = (3 * Math.PI / 2) - deltaLongitude;
-    }
+  // Determine if the point is in daylight
+  const isInSunlight = cosZenithAngle > 0;
 
-    // Normalize angleUntilEvent to [0, 2π)
-    angleUntilEvent = (angleUntilEvent + 2 * Math.PI) % (2 * Math.PI);
+  // Calculate the hour angle of sunrise/sunset
+  const cosH0 = -Math.tan(subsolarLatitude) * Math.tan(latitude);
 
-    // Calculate time until the event
-    let timeUntilEvent = angleUntilEvent / angularSpeed;
+  let H0;
+  if (cosH0 >= 1) {
+      // The sun is always below the horizon, never rises
+      return "The sun never rises - Local time: --:--:--";
+  } else if (cosH0 <= -1) {
+      // The sun is always above the horizon, never sets
+      return "The sun never sets - Local time: --:--:--";
+  } else {
+      H0 = Math.acos(cosH0);
+  }
 
-    // Calculate local time, with subsolar point at 12:00
-    let localTimeHours = ((subsolarLongitude - longitude + Math.PI) / (2 * Math.PI)) * 24; // 调整 localTimeHours 的计算
+  let eventType;
+  let angleUntilEvent;
 
-    // Normalize local time to [0, 24)
-    localTimeHours = (localTimeHours + 24) % 24;
+  if (isInSunlight) {
+      // Currently in daylight, calculate the time until sunset
+      eventType = "Time until sunset";
+      angleUntilEvent = hourAngle - H0;
+  } else {
+      // Currently at night, calculate the time until sunrise
+      eventType = "Time until sunrise";
+      angleUntilEvent = hourAngle + H0;
+  }
 
-    // Format local time as HH:MM:SS
-    const localHours = Math.floor(localTimeHours);
-    const localMinutes = Math.floor((localTimeHours % 1) * 60);
-    const localSeconds = Math.floor(((localTimeHours * 3600) % 60));
+  // Normalize angleUntilEvent to [-π, π]
+  angleUntilEvent = ((angleUntilEvent + Math.PI) % (2 * Math.PI)) - Math.PI;
 
-    // Format time until event
-    const hours = Math.floor(timeUntilEvent / 3600);
-    const minutes = Math.floor((timeUntilEvent % 3600) / 60);
-    const seconds = Math.floor(timeUntilEvent % 60);
+  // Calculate the time until the event
+  let timeUntilEvent = -angleUntilEvent / angularSpeed; // Since the angle decreases, time increases, so take the negative value
 
-    const pad = (num) => String(Math.floor(num)).padStart(2, '0');
+  // If the time is negative, add a full rotation period
+  if (timeUntilEvent < 0) {
+      timeUntilEvent += this.lengthOfDay * 24 * 3600;
+  }
 
-    // Return the event type, time until event, and local time
-    return `${eventType}: ${pad(hours)}:${pad(minutes)}:${pad(seconds)} - Local time: ${pad(localHours)}:${pad(localMinutes)}:${pad(localSeconds)}`;
+  // Calculate local time, the subsolar point is at 12:00
+  let localTimeHours = ((hourAngle + Math.PI) / (2 * Math.PI)) * 24;
+
+  // Normalize local time to [0, 24)
+  localTimeHours = (localTimeHours + 24) % 24;
+
+  // Format local time as HH:MM:SS
+  const localHours = Math.floor(localTimeHours);
+  const localMinutes = Math.floor((localTimeHours % 1) * 60);
+  const localSeconds = Math.floor(((localTimeHours * 3600) % 60));
+
+  // Format the time until the event
+  const hours = Math.floor(timeUntilEvent / 3600);
+  const minutes = Math.floor((timeUntilEvent % 3600) / 60);
+  const seconds = Math.floor(timeUntilEvent % 60);
+
+  const pad = (num) => String(Math.floor(num)).padStart(2, '0');
+
+  // Return the event type, time until the event, and local time
+  return `${eventType} ${pad(hours)}:${pad(minutes)}:${pad(seconds)} - Local time: ${pad(localHours)}:${pad(localMinutes)}:${pad(localSeconds)}`;
 }
-
-
-
-
-
 
   showLabel(show) {
     const labelEle = this.label.element;
