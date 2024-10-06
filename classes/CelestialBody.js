@@ -466,9 +466,65 @@ export default class CelestialBody {
     window.addEventListener('mousemove', onMouseMove);
 }
   
-=======
-    window.addEventListener("mousemove", onMouseMove);
-  }
+getTimeUntilSunriseOrSunset(mousePosition) {
+    if (this.lengthOfDay === 0) {
+        return "00:00:00";
+    }
+
+    // 确保自转状态是最新的
+    this.updateRotationRecur();
+
+    // 1. 获取鼠标的绝对位置 (已知为绝对坐标)
+    const pointPosition = mousePosition.clone();  // 这里 mousePosition 是鼠标点击的世界坐标
+
+    // 2. 获取星球的绝对位置（星球中心）
+    const planetPosition = this.meshBody.position.clone();  // 星球的中心位置
+
+    // 3. 获取恒星的绝对位置
+    const starPosition = this.parentStar.meshBody.position.clone();  // 恒星的绝对位置
+
+    // 4. 计算恒星到星球中心的向量（光照方向）
+    const directionToStar = starPosition.sub(planetPosition).normalize();  // 光照方向向量
+
+    // 5. 计算鼠标点到星球中心的向量
+    const directionToPoint = pointPosition.sub(planetPosition).normalize();  // 鼠标点方向向量
+
+    // 6. 计算恒星光照方向与鼠标点的夹角 (点积计算cos夹角)
+    const cosAngle = directionToStar.dot(directionToPoint);  // 点积用于计算夹角的cos值
+
+    // 判断当前点是否在光照面
+    const isInSunlight = cosAngle > 0;  // 当cos夹角大于0，表示当前点在光照面上
+
+    let secondsUntilEvent;
+    let eventType;
+
+    // 7. 如果当前点在光照面，计算到日落的时间
+    if (isInSunlight) {
+        eventType = "即将日落";
+
+        // 计算离开光照面的时间（即日落）
+        const angleToSunset = Math.acos(cosAngle);  // 从光照面离开的角度
+        secondsUntilEvent = (angleToSunset / (2 * Math.PI)) * this.lengthOfDay * 3600;
+
+    } else {
+        // 否则当前点在阴影面，计算到日出的时间
+        eventType = "即将日出";
+
+        // 计算进入光照面的时间（即日出）
+        const angleToSunrise = Math.acos(-cosAngle);  // 从阴影进入光照面的角度
+        secondsUntilEvent = (angleToSunrise / (2 * Math.PI)) * this.lengthOfDay * 3600;
+    }
+
+    // 8. 将时间转换为小时、分钟、秒格式
+    const hours = Math.floor(secondsUntilEvent / 3600);
+    const minutes = Math.floor((secondsUntilEvent % 3600) / 60);
+    const seconds = Math.floor(secondsUntilEvent % 60);
+
+    const pad = (num) => String(num).padStart(2, '0');
+
+    // 9. 返回带有事件类型和时间的字符串
+    return `${eventType}: ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
 >>>>>>> 4703418b664d5b9b1b9bb20190a0e59bd39a839a
 
   showLabel(show) {
