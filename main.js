@@ -78,13 +78,16 @@ function animate() {
       rootBody.lightSource.intensity = THREE.MathUtils.lerp(rootBody.lightSource.intensity, 5, 0.1);
     }
   }
-  if (UI.controlTarget) {
+  if (renderer.info.render.frame % 2 === 0 && UI.controlTarget) {
     UI.controlTarget.updateLocationVisibility();
   }
 
   controls.update();
   renderer.render(scene, camera);
-  cssRenderer.render(scene, camera);
+
+  if (renderer.info.render.frame % 2 === 0) {
+    cssRenderer.render(scene, camera);
+  }
 }
 
 renderer.setAnimationLoop(animate);
