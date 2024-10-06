@@ -497,82 +497,74 @@ export default class CelestialBody {
   showCoordinatesOnHover() {
     const coordinatesDiv = document.getElementById("coordinates");
 
-    // 保存鼠标位置
+    // Save mouse position
     const mouse = new THREE.Vector2();
 
-    // 更新鼠标位置
+    // Update mouse position
     window.addEventListener("mousemove", (event) => {
-      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     });
 
     const updateCoordinates = () => {
-      // 创建射线
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouse, Ctrls.camera);
+        // Create raycaster
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(mouse, Ctrls.camera);
 
-      // 获取当前聚焦的星球
-      const focusedBody = UI.getControlTarget();
+        // Get the currently focused celestial body
+        const focusedBody = UI.getControlTarget();
 
-      if (focusedBody && focusedBody.meshBody) {
-        const intersects = raycaster.intersectObject(focusedBody.meshBody);
-        if (intersects.length > 0) {
-          const intersect = intersects[0];
-          const point = intersect.point.clone(); // 鼠标点击的世界坐标
+        if (focusedBody && focusedBody.meshBody) {
+            const intersects = raycaster.intersectObject(focusedBody.meshBody);
+            if (intersects.length > 0) {
+                const intersect = intersects[0];
+                const point = intersect.point.clone(); // World coordinates of the mouse click
 
-          // 将世界坐标转换为星球的局部坐标
-          const localPoint = focusedBody.meshBody.worldToLocal(point.clone());
+                // Convert world coordinates to the celestial body's local coordinates
+                const localPoint = focusedBody.meshBody.worldToLocal(point.clone());
 
-          // 计算经纬度
-          const radius = focusedBody.bodyRadius;
-          const phi = Math.acos(localPoint.y / radius); // 极角
-          const theta = Math.atan2(localPoint.z, localPoint.x); // 方位角
+                // Calculate latitude and longitude
+                const radius = focusedBody.bodyRadius;
+                const phi = Math.acos(localPoint.y / radius); // Polar angle
+                const theta = Math.atan2(localPoint.z, localPoint.x); // Azimuthal angle
 
-          const latitude = 90 - (phi * 180) / Math.PI; // 纬度
-          let longitude = (theta * 180) / Math.PI; // 经度
+                const latitude = 90 - (phi * 180) / Math.PI; // Latitude
+                let longitude = (theta * 180) / Math.PI; // Longitude
 
-          longitude += 10;
+                // Normalize longitude to be within -180 to 180 degrees
+                const normalizedLongitude = ((longitude + 360) % 360) - 180;
 
-          // 确保经度在 -180 到 180 度之间
-          const normalizedLongitude = ((longitude + 360) % 360) - 180;
+                // Get time until sunrise or sunset, passing absolute coordinates
+                const surfaceTime = focusedBody.getTimeUntilSunriseOrSunset(point);
 
-          // 获取日出或日落时间，传递绝对坐标
-          const surfaceTime = focusedBody.getTimeUntilSunriseOrSunset(point);
+                // Display latitude, longitude, and surface time information
+                const info = `Latitude: ${latitude.toFixed(2)}°, Longitude: ${normalizedLongitude.toFixed(2)}°, ${surfaceTime}`;
+                coordinatesDiv.innerHTML = info;
+                coordinatesDiv.style.display = "block";
+                coordinatesDiv.style.left = `${((mouse.x + 1) * window.innerWidth) / 2 + 10}px`;
+                coordinatesDiv.style.top = `${((-mouse.y + 1) * window.innerHeight) / 2 + 10}px`;
 
-          // 显示经纬度和地表时间信息
-          const info = `纬度: ${latitude.toFixed(
-            2
-          )}°, 经度: ${normalizedLongitude.toFixed(2)}°, ${surfaceTime}`;
-          coordinatesDiv.innerHTML = info;
-          coordinatesDiv.style.display = "block";
-          coordinatesDiv.style.left = `${
-            ((mouse.x + 1) * window.innerWidth) / 2 + 10
-          }px`;
-          coordinatesDiv.style.top = `${
-            ((-mouse.y + 1) * window.innerHeight) / 2 + 10
-          }px`;
-
-          return;
+                return;
+            }
         }
-      }
 
-      // 如果没有聚焦到星球或没有交点，隐藏经纬度信息
-      coordinatesDiv.style.display = "none";
+        // If no celestial body is focused or no intersection, hide the coordinates information
+        coordinatesDiv.style.display = "none";
     };
 
-    // 在动画循环中添加更新
+    // Add update to the animation loop
     const animate = () => {
-      requestAnimationFrame(animate);
+        requestAnimationFrame(animate);
 
-      // 更新经纬度显示
-      updateCoordinates();
+        // Update coordinates display
+        updateCoordinates();
 
-      // 其他动画和渲染逻辑...
-      // renderer.render(scene, camera);
+        // Other animation and rendering logic...
+        // renderer.render(scene, camera);
     };
 
-    animate(); // 启动动画循环
-  }
+    animate(); // Start the animation loop
+}
 
   getTimeUntilSunriseOrSunset(mousePosition) {
     if (this.lengthOfDay === 0) {
@@ -616,11 +608,11 @@ export default class CelestialBody {
 
     if (isInSunlight) {
         // Currently in daylight, calculate time until sunset
-        eventType = "距离日落";
+        eventType = "Sunset in";
         angleUntilEvent = Math.PI / 2 - deltaLongitude;
     } else {
         // Currently in night, calculate time until sunrise
-        eventType = "距离日出";
+        eventType = "Sunrise in";
         angleUntilEvent = (3 * Math.PI / 2) - deltaLongitude;
     }
 
@@ -649,7 +641,7 @@ export default class CelestialBody {
     const pad = (num) => String(Math.floor(num)).padStart(2, '0');
 
     // Return the event type, time until event, and local time
-    return `${eventType}: ${pad(hours)}:${pad(minutes)}:${pad(seconds)} - 本地时间: ${pad(localHours)}:${pad(localMinutes)}:${pad(localSeconds)}`;
+    return `${eventType}: ${pad(hours)}:${pad(minutes)}:${pad(seconds)} - Local time: ${pad(localHours)}:${pad(localMinutes)}:${pad(localSeconds)}`;
 }
 
 
