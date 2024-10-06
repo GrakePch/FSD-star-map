@@ -502,7 +502,7 @@ export default class CelestialBody {
     };
   }
 
-  showCoordinatesOnHover() {
+   showCoordinatesOnHover() {
     const coordinatesDiv = document.getElementById("coordinates");
 
     // Save mouse position
@@ -534,19 +534,24 @@ export default class CelestialBody {
                 // Calculate latitude and longitude
                 const radius = focusedBody.bodyRadius;
                 const phi = Math.acos(localPoint.y / radius); // Polar angle
-                const theta = Math.atan2(localPoint.z, localPoint.x); // Azimuthal angle
-
-                const latitude = 90 - (phi * 180) / Math.PI; // Latitude
+                let theta = Math.atan2(localPoint.z, localPoint.x); // Azimuthal angle
+                theta = -theta; // Reverse theta to match the planet's rotation
+                const latitude = (phi * 180) / Math.PI - 90; // Latitude
                 let longitude = (theta * 180) / Math.PI; // Longitude
+                longitude = longitude - 180; // 保持偏移修正
 
                 // Normalize longitude to be within -180 to 180 degrees
-                const normalizedLongitude = ((longitude + 360) % 360) - 180;
+                if (longitude < -180) {
+                    longitude += 360;
+                } else if (longitude > 180) {
+                    longitude -= 360;
+                }
 
                 // Get time until sunrise or sunset, passing absolute coordinates
                 const surfaceTime = focusedBody.getTimeUntilSunriseOrSunset(point);
 
                 // Display latitude, longitude, and surface time information
-                const info = `Latitude: ${latitude.toFixed(2)}°, Longitude: ${normalizedLongitude.toFixed(2)}°, ${surfaceTime}`;
+                const info = `Latitude: ${latitude.toFixed(2)}°, Longitude: ${longitude.toFixed(2)}°, ${surfaceTime}`;
                 coordinatesDiv.innerHTML = info;
                 coordinatesDiv.style.display = "block";
                 coordinatesDiv.style.left = `${((mouse.x + 1) * window.innerWidth) / 2 + 10}px`;
@@ -566,13 +571,11 @@ export default class CelestialBody {
 
         // Update coordinates display
         updateCoordinates();
-
-        // Other animation and rendering logic...
-        // renderer.render(scene, camera);
     };
 
     animate(); // Start the animation loop
 }
+
 
   getTimeUntilSunriseOrSunset(mousePosition) {
     if (this.lengthOfDay === 0) {
