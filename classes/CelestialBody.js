@@ -495,156 +495,161 @@ export default class CelestialBody {
   }
 
   showCoordinatesOnHover() {
-    const coordinatesDiv = document.getElementById('coordinates');
-  
+    const coordinatesDiv = document.getElementById("coordinates");
+
     // 保存鼠标位置
     const mouse = new THREE.Vector2();
-  
+
     // 更新鼠标位置
-    window.addEventListener('mousemove', (event) => {
+    window.addEventListener("mousemove", (event) => {
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     });
-  
+
     const updateCoordinates = () => {
       // 创建射线
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(mouse, Ctrls.camera);
-  
+
       // 获取当前聚焦的星球
       const focusedBody = UI.getControlTarget();
-  
+
       if (focusedBody && focusedBody.meshBody) {
         const intersects = raycaster.intersectObject(focusedBody.meshBody);
         if (intersects.length > 0) {
           const intersect = intersects[0];
-          const point = intersect.point.clone();  // 鼠标点击的世界坐标
-  
+          const point = intersect.point.clone(); // 鼠标点击的世界坐标
+
           // 将世界坐标转换为星球的局部坐标
           const localPoint = focusedBody.meshBody.worldToLocal(point.clone());
-  
+
           // 计算经纬度
           const radius = focusedBody.bodyRadius;
           const phi = Math.acos(localPoint.y / radius); // 极角
           const theta = Math.atan2(localPoint.z, localPoint.x); // 方位角
-  
-          const latitude = 90 - (phi * 180) / Math.PI;  // 纬度
-          let longitude = (theta * 180) / Math.PI;  // 经度
-  
+
+          const latitude = 90 - (phi * 180) / Math.PI; // 纬度
+          let longitude = (theta * 180) / Math.PI; // 经度
+
           longitude += 10;
-  
+
           // 确保经度在 -180 到 180 度之间
           const normalizedLongitude = ((longitude + 360) % 360) - 180;
-  
+
           // 获取日出或日落时间，传递绝对坐标
           const surfaceTime = focusedBody.getTimeUntilSunriseOrSunset(point);
-  
+
           // 显示经纬度和地表时间信息
-          const info = `纬度: ${latitude.toFixed(2)}°, 经度: ${normalizedLongitude.toFixed(2)}°, ${surfaceTime}`;
+          const info = `纬度: ${latitude.toFixed(
+            2
+          )}°, 经度: ${normalizedLongitude.toFixed(2)}°, ${surfaceTime}`;
           coordinatesDiv.innerHTML = info;
-          coordinatesDiv.style.display = 'block';
-          coordinatesDiv.style.left = `${(mouse.x + 1) * window.innerWidth / 2 + 10}px`;
-          coordinatesDiv.style.top = `${(-mouse.y + 1) * window.innerHeight / 2 + 10}px`;
-  
+          coordinatesDiv.style.display = "block";
+          coordinatesDiv.style.left = `${
+            ((mouse.x + 1) * window.innerWidth) / 2 + 10
+          }px`;
+          coordinatesDiv.style.top = `${
+            ((-mouse.y + 1) * window.innerHeight) / 2 + 10
+          }px`;
+
           return;
         }
       }
-  
+
       // 如果没有聚焦到星球或没有交点，隐藏经纬度信息
-      coordinatesDiv.style.display = 'none';
+      coordinatesDiv.style.display = "none";
     };
-  
+
     // 在动画循环中添加更新
     const animate = () => {
       requestAnimationFrame(animate);
-  
+
       // 更新经纬度显示
       updateCoordinates();
-  
+
       // 其他动画和渲染逻辑...
       // renderer.render(scene, camera);
     };
-  
+
     animate(); // 启动动画循环
   }
-
-
 
   getTimeUntilSunriseOrSunset(mousePosition) {
     if (this.lengthOfDay === 0) {
         return "00:00:00";
     }
 
-    // 确保自转状态是最新的
+    // Ensure the rotation status is up-to-date
     this.updateRotationRecur();
 
-    // 星球的自转周期（秒）
-    let rotationPeriodSeconds = this.lengthOfDay * 86400; // lengthOfDay 以地球日为单位
+    // Calculate the planet's angular speed (radians per second)
+    const angularSpeed = (2 * Math.PI) / (this.lengthOfDay * 24 * 3600);
 
-    // 星球自转的角速度（弧度每秒）
-    let angularSpeed = (2 * Math.PI) / rotationPeriodSeconds; // 弧度每秒
+    if (angularSpeed === 0) {
+        return "00:00:00";
+    }
 
-    // 获取太阳在星球局部坐标系中的方向向量
-    const sunDirectionWorld = this.parentStar.meshBody.getWorldPosition(new THREE.Vector3()).sub(this.meshBody.getWorldPosition(new THREE.Vector3())).normalize();
+    // Get the star's direction vector in the planet's local coordinate system
+    const sunDirectionWorld = this.parentStar.meshBody.getWorldPosition(new THREE.Vector3())
+        .sub(this.meshBody.getWorldPosition(new THREE.Vector3()))
+        .normalize();
     const sunDirectionLocal = sunDirectionWorld.applyQuaternion(this.meshBody.quaternion.clone().invert());
 
-    // 计算太阳直射点的经度
-    const subsolarLongitude = Math.atan2(sunDirectionLocal.z, sunDirectionLocal.x); // 弧度
+    // Calculate the subsolar point's longitude
+    const subsolarLongitude = Math.atan2(sunDirectionLocal.z, sunDirectionLocal.x);
 
-    // 将鼠标点击的世界坐标转换为星球的局部坐标
+    // Convert the mouse click's world coordinates to the planet's local coordinates
     const localPoint = this.meshBody.worldToLocal(mousePosition.clone());
 
-    // 计算给定点的经度和纬度
-    const radius = localPoint.length();
-    const latitude = Math.asin(localPoint.y / radius);
+    // Calculate the longitude of the given point
     const longitude = Math.atan2(localPoint.z, localPoint.x);
 
-    // 计算经度差（当前点经度 - 太阳直射点经度），并规范到 [-π, π]
-    let deltaLongitude = longitude - subsolarLongitude;
+    // Calculate the longitude difference and normalize to [-π, π]
+    let deltaLongitude = subsolarLongitude - longitude; // 反转 deltaLongitude 的计算
     deltaLongitude = ((deltaLongitude + Math.PI) % (2 * Math.PI)) - Math.PI;
 
-    // 判断当前点是在白天还是夜晚
-    let isInSunlight = Math.abs(deltaLongitude) < Math.PI / 2;
+    // Determine if the point is in daylight
+    const isInSunlight = Math.abs(deltaLongitude) < Math.PI / 2;
 
     let eventType;
     let angleUntilEvent;
 
     if (isInSunlight) {
+        // Currently in daylight, calculate time until sunset
         eventType = "距离日落";
-        // 距离日落的角度 = π/2 - 当前经度差
         angleUntilEvent = Math.PI / 2 - deltaLongitude;
     } else {
+        // Currently in night, calculate time until sunrise
         eventType = "距离日出";
-        // 距离日出的角度 = -π/2 - 当前经度差
-        angleUntilEvent = -Math.PI / 2 - deltaLongitude;
+        angleUntilEvent = (3 * Math.PI / 2) - deltaLongitude;
     }
 
-    // 将角度规范到 [0, 2π]
+    // Normalize angleUntilEvent to [0, 2π)
     angleUntilEvent = (angleUntilEvent + 2 * Math.PI) % (2 * Math.PI);
 
-    // 如果角度大于 π，则取其补角，以实现时间的重置
-    if (angleUntilEvent > Math.PI) {
-        angleUntilEvent = 2 * Math.PI - angleUntilEvent;
-    }
-
-    // 计算距离事件的时间
+    // Calculate time until the event
     let timeUntilEvent = angleUntilEvent / angularSpeed;
 
-    // 将时间规范到 [0, 半个自转周期]
-    let halfRotationPeriod = rotationPeriodSeconds / 2;
-    if (timeUntilEvent > halfRotationPeriod) {
-        timeUntilEvent = halfRotationPeriod - (timeUntilEvent - halfRotationPeriod);
-    }
+    // Calculate local time, with subsolar point at 12:00
+    let localTimeHours = ((subsolarLongitude - longitude + Math.PI) / (2 * Math.PI)) * 24; // 调整 localTimeHours 的计算
 
-    // 将时间转换为小时、分钟、秒格式
+    // Normalize local time to [0, 24)
+    localTimeHours = (localTimeHours + 24) % 24;
+
+    // Format local time as HH:MM:SS
+    const localHours = Math.floor(localTimeHours);
+    const localMinutes = Math.floor((localTimeHours % 1) * 60);
+    const localSeconds = Math.floor(((localTimeHours * 3600) % 60));
+
+    // Format time until event
     const hours = Math.floor(timeUntilEvent / 3600);
     const minutes = Math.floor((timeUntilEvent % 3600) / 60);
     const seconds = Math.floor(timeUntilEvent % 60);
 
     const pad = (num) => String(Math.floor(num)).padStart(2, '0');
 
-    // 返回带有事件类型和时间的字符串
-    return `${eventType}: ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    // Return the event type, time until event, and local time
+    return `${eventType}: ${pad(hours)}:${pad(minutes)}:${pad(seconds)} - 本地时间: ${pad(localHours)}:${pad(localMinutes)}:${pad(localSeconds)}`;
 }
 
 
