@@ -263,7 +263,7 @@ body {
 }
 
 
-#target-panel {
+.info-panel {
     top: 1em;
     right: 1em;
     max-height: calc(100% - 2rem);
@@ -276,15 +276,15 @@ body {
     transition: right .2s ease-out;
 }
 
-#target-panel.hide {
+.info-panel.hide {
     right: -17em;
 }
 
-#target-panel>h1, #target-panel>p {
+.info-panel>h1, .info-panel>p {
     padding: 0 1rem;
 }
 
-#target-image {
+.info-image {
     width: 100%;
     aspect-ratio: 16 / 9;
     background-color: #404040;
@@ -293,41 +293,41 @@ body {
     background-position: center;
 }
 
-#target-name {
+.info-name {
     margin: 1rem 0 .25rem 0;
     font-family: var(--font-geom);
     font-weight: 500;
     line-height: 110%;
 }
 
-#target-type {
+.info-type {
     color: #808080;
 }
 
-#target-panel>hr {
+.info-panel>hr {
     border: none;
     background-color: #808080;
     height: 1px;
     margin: 1em;
 }
-#target-panel>.key-values {
+.info-panel>.key-values {
     display: flex;
     flex-direction: column;
     gap: .25em;
     align-items: stretch;
 }
-#target-panel>.key-values>div {
+.info-panel>.key-values>div {
     display: flex;
     flex-wrap: wrap;
     align-items: start;
     padding: 0 1em;
 }
 
-#target-panel>.key-values>div>*{
+.info-panel>.key-values>div>*{
     flex-shrink: 0;
 }
 
-#target-panel>.key-values>div>p:last-child {
+.info-panel>.key-values>div>p:last-child {
     text-align: right;
     flex-grow: 1;
 }

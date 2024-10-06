@@ -138,7 +138,7 @@ class Database {
         },
         parseInt(data.private),
         parseInt(data.quantum),
-        data.affliation,
+        data.affiliation,
         data.themeImage,
         data.wikiLink
       );

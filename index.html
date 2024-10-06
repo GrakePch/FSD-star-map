@@ -24,10 +24,10 @@
         <input type="checkbox" id="load-HD-textures" name="load-HD-textures" />
         <label for="load-HD-textures">HD Textures</label>
       </div>
-      <div id="target-panel" class="hide">
-        <div id="target-image"></div>
-        <h1 id="target-name"></h1>
-        <p id="target-type"></p>
+      <div id="target-panel" class="info-panel hide">
+        <div id="target-image" class="info-image"></div>
+        <h1 id="target-name" class="info-name"></h1>
+        <p id="target-type" class="info-type"></p>
         <hr />
         <div class="key-values">
           <div>
@@ -49,6 +49,30 @@
           <div>
             <p>Orbital Inclination</p>
             <p id="target-orbital-inclination"></p>
+          </div>
+        </div>
+      </div>
+      <div id="location-target-panel" class="info-panel hide">
+        <div id="location-target-image" class="info-image"></div>
+        <h1 id="location-target-name" class="info-name"></h1>
+        <p id="location-target-type" class="info-type"></p>
+        <hr />
+        <div class="key-values">
+          <div>
+            <p>Quantum Marker</p>
+            <p id="location-target-is-quantum"></p>
+          </div>
+          <div>
+            <p>Private Property</p>
+            <p id="location-target-is-private"></p>
+          </div>
+          <div>
+            <p>Affiliation</p>
+            <p id="location-target-affiliation"></p>
+          </div>
+          <div>
+            <p>Altitude</p>
+            <p id="location-target-altitude"></p>
           </div>
         </div>
       </div>

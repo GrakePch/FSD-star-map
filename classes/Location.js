@@ -4,6 +4,7 @@ import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 import Ctrls from "./Controls.js";
 import { icon } from "../icons.js";
 import { euclideanDist } from "../utils.js";
+import UI from "./UI.js";
 
 export default class Location {
   constructor(name, type, parentBody, parentStar, coordinatesRel, isPrivate, isQuantum, affiliation, themeImage, wikiLink) {
@@ -12,8 +13,8 @@ export default class Location {
     this.parentBody = parentBody;
     this.parentStar = parentStar;
     this.coordinatesRel = coordinatesRel;
-    this.isPrivate = isPrivate;
-    this.isQuantum = isQuantum;
+    this.isPrivate = isNaN(isPrivate) ? 0 : isPrivate;
+    this.isQuantum = isNaN(isQuantum) ? 1 : isQuantum;
     this.affiliation = affiliation;
     this.themeImage = themeImage;
     this.wikiLink = wikiLink;
@@ -35,7 +36,7 @@ export default class Location {
     labelEle.className = "label";
     labelEle.textContent = this.name;
     this.DOMLabelContainer = container;
-    // element.addEventListener()
+    container.addEventListener("pointerdown", this.getFuncUpdateLocationTarget());
     const markerEle = document.createElement("div");
     markerEle.className = "icon";
     container.insertAdjacentElement("beforeend", markerEle);
@@ -59,6 +60,12 @@ export default class Location {
     if (this.isInOrbit) {
       this.#createMeshOrbit();
     }
+  }
+
+  getFuncUpdateLocationTarget() {
+    return () => {
+      UI.updateControlLocationTarget(this);
+    };
   }
 
   showLabel(show) {
