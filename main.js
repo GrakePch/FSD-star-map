@@ -51,6 +51,10 @@ async function init() {
 
   // 调用 showCoordinatesOnHover 方法
   rootBody.showCoordinatesOnHover();
+
+  document.getElementById("load-HD-textures").addEventListener("change", (e) => {
+    rootBody.updateMapsRecur(e.target.checked);
+  });
 }
 init();
 
@@ -67,7 +71,7 @@ function animate() {
     rootBody.updateLabel();
 
     if (UI.controlTarget && controls.getDistance() < Math.max(UI.controlTarget.bodyRadius * 5, 1000)) {
-      ambientLight.intensity = THREE.MathUtils.lerp(ambientLight.intensity, .5, 0.1);
+      ambientLight.intensity = THREE.MathUtils.lerp(ambientLight.intensity, 0.5, 0.1);
       rootBody.lightSource.intensity = THREE.MathUtils.lerp(rootBody.lightSource.intensity, 3, 0.1);
     } else {
       ambientLight.intensity = THREE.MathUtils.lerp(ambientLight.intensity, 0, 0.1);

@@ -22,6 +22,7 @@ body {
 
 .ui>* {
     position: absolute;
+    z-index: 100;
 }
 
 .label {
@@ -255,4 +256,9 @@ body {
 .navigation-tree .accordion.on:after {
     content: "−";
     /* Unicode Character “−” (U+2212) */
+}
+
+#settings {
+    right: 0;
+    bottom: 0;
 }

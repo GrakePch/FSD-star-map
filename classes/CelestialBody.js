@@ -61,14 +61,12 @@ export default class CelestialBody {
       this.meshBody.add(light);
     }
     if (this.type === "Planet") {
-      this.#loadMaps();
       this.#createMeshSphere(0xffffff);
       const color = this.themeColor ? `rgb(${this.themeColor.r}, ${this.themeColor.g}, ${this.themeColor.b})` : 0xffffff;
       this.#createMeshOrbit([0, 0, 0], color);
     }
     if (this.type === "Moon") {
       this.#createMeshSphere(0x404040);
-      this.#loadMaps();
       this.#createMeshOrbit(this.parentBody.getPosition(), 0x404040);
       this.meshGroup.attach(this.meshOrbit);
     }
@@ -76,6 +74,8 @@ export default class CelestialBody {
       this.#createMeshOrbit([0, 0, 0], 0x404040);
       this.meshGroup.attach(this.meshOrbit);
     }
+
+    this.#loadMaps(false);
 
     this.#createMeshRing();
 
@@ -185,9 +185,15 @@ export default class CelestialBody {
     this.meshBody.add(elevationLine);
   }
 
-  #loadMaps() {
-    const loadHD = false;
+  updateMapsRecur(loadHD) {
+    this.#loadMaps(loadHD);
+    for (const body of this.childBodies) {
+      body.updateMapsRecur(loadHD);
+    }
+  }
 
+  #loadMaps(loadHD) {
+    if (!["Planet", "Moon"].includes(this.type)) return;
     const textureLoader = new THREE.TextureLoader();
     textureLoader.load(
       `./public/textures/${loadHD ? "bodies-hd" : "bodies"}/${this.name.toLowerCase()}.webp`,
