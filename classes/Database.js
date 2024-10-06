@@ -89,7 +89,8 @@ class Database {
               g: parseFloat(data.themeColorG),
               b: parseFloat(data.themeColorB),
             }
-          : null
+          : null,
+        data.themeImage
       );
     }
 

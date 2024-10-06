@@ -79,6 +79,13 @@ export default class Location {
     const raycaster = new THREE.Raycaster();
     const pos = new THREE.Vector3();
     this.label.getWorldPosition(pos);
+    if (this.distanceToParentCenter < this.parentBody.bodyRadius) {
+      let parentPos = new THREE.Vector3();
+      this.parentBody.meshBody.getWorldPosition(parentPos);
+      pos.sub(parentPos).normalize();
+      pos.multiplyScalar(this.parentBody.bodyRadius);
+      pos.add(parentPos);
+    }
     const dir = new THREE.Vector3().copy(pos).sub(Ctrls.camera.position).normalize().negate();
     raycaster.set(pos, dir);
     const intersects = raycaster.intersectObject(this.parentBody.meshBody, false);
@@ -147,6 +154,7 @@ const labelAppearances = {
   "Distribution center": {
     icon: "distribution_center",
     size: "M",
+    color: "#0597ff",
   },
   Settlement: {
     icon: "settlement",
@@ -174,5 +182,9 @@ const labelAppearances = {
     icon: "prison",
     size: "M",
     color: "#ff8126",
+  },
+  City: {
+    size: "M",
+    color: "#0597ff",
   },
 };

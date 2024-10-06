@@ -1,27 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>Eyes on Star Citizen</title>
-  <link rel="stylesheet" href="index.css">
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.168.0/examples/jsm/"
-    }
-  }
-  </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
-</head>
-<body>
-  <div class="ui">
-    <div id="coordinates" style="position: absolute; display: none; background: rgba(0, 0, 0, 0.7); color: white; padding: 5px; border-radius: 5px; pointer-events: none;"></div>
-    <div class="navigation-tree" id="nav-panel"></div>
-    <h1 id="targeting-body"></h1>
-  </div>
-  <script type="module" src="/main.js"></script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <title>Eyes on Star Citizen</title>
+    <link rel="stylesheet" href="index.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.168.0/examples/jsm/"
+        }
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="ui">
+      <div id="coordinates" style="position: absolute; display: none; background: rgba(0, 0, 0, 0.7); color: white; padding: 5px; border-radius: 5px; pointer-events: none"></div>
+      <div class="navigation-tree" id="nav-panel"></div>
+      <div id="settings">
+        <input type="checkbox" id="load-HD-textures" name="load-HD-textures" />
+        <label for="load-HD-textures">HD Textures</label>
+      </div>
+      <div id="target-panel" class="hide">
+        <div id="target-image"></div>
+        <h1 id="target-name"></h1>
+        <p id="target-type"></p>
+        <hr />
+        <div class="key-values">
+          <div>
+            <p>Radius</p>
+            <p id="target-radius"></p>
+          </div>
+          <div>
+            <p>Length of Day</p>
+            <p id="target-length-of-day"></p>
+          </div>
+          <div>
+            <p>Hour Angle</p>
+            <p id="target-hour-angle"></p>
+          </div>
+          <div>
+            <p>Orbital Radius</p>
+            <p id="target-orbital-radius"></p>
+          </div>
+          <div>
+            <p>Orbital Inclination</p>
+            <p id="target-orbital-inclination"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/main.js"></script>
+  </body>
 </html>
