@@ -7,7 +7,7 @@ import UI from "./UI.js";
 import { icon } from "../icons.js";
 
 export default class CelestialBody {
-  constructor(name, type, ordinal, parentBody, parentStar, coordinates, rotationQuanternion, bodyRadius, rotationRate, rotationCorrection, orbitAngle, orbitalRadius, ringRadiusInner, ringRadiusOuter, themeColor) {
+  constructor(name, type, ordinal, parentBody, parentStar, coordinates, rotationQuanternion, bodyRadius, rotationRate, rotationCorrection, orbitAngle, orbitalRadius, ringRadiusInner, ringRadiusOuter, themeColor, themeImage) {
     this.name = name;
     this.type = type;
     this.ordinal = ordinal;
@@ -23,6 +23,7 @@ export default class CelestialBody {
     this.ringRadiusInner = ringRadiusInner;
     this.ringRadiusOuter = ringRadiusOuter;
     this.themeColor = themeColor;
+    this.themeImage = themeImage;
 
     this.lengthOfDay = (3600 * this.rotationRate) / 86400;
     this.angularRotationRate = 6 / this.rotationRate;
