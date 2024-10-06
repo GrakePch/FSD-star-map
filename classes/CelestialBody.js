@@ -444,8 +444,16 @@ export default class CelestialBody {
           const theta = Math.atan2(relativePoint.z, relativePoint.x);
 
           const latitude = (phi * 180) / Math.PI - 90;
+<<<<<<< HEAD
+          let longitude = (theta * 180) / Math.PI + 200; // 移动60度
+  
+          // 归一化经度到-180到180度之间
+          longitude = ((longitude + 180) % 360 + 360) % 360 - 180;
+  
+=======
           const longitude = (theta * 180) / Math.PI;
 
+>>>>>>> 4703418b664d5b9b1b9bb20190a0e59bd39a839a
           // 显示经纬度信息
           const info = `纬度: ${latitude.toFixed(2)}°, 经度: ${longitude.toFixed(2)}°`;
           coordinatesDiv.innerHTML = info;
@@ -461,8 +469,14 @@ export default class CelestialBody {
     };
 
     // 添加鼠标移动事件侦听器
+<<<<<<< HEAD
+    window.addEventListener('mousemove', onMouseMove);
+}
+  
+=======
     window.addEventListener("mousemove", onMouseMove);
   }
+>>>>>>> 4703418b664d5b9b1b9bb20190a0e59bd39a839a
 
   showLabel(show) {
     const labelEle = this.label.element;
