@@ -43,7 +43,7 @@ export default class CelestialBody {
     this.coordinates = coordinates;
     this.rotationQuanternion = rotationQuanternion;
     this.bodyRadius = bodyRadius;
-    this.rotationRate = rotationRate || 0; /* Hours per cycle */
+    this.lengthOfDay = rotationRate || 0; /* Hours per cycle */
     this.rotationCorrection = rotationCorrection || 0;
     this.orbitAngle = orbitAngle;
     this.orbitalRadius = orbitalRadius;
@@ -52,9 +52,8 @@ export default class CelestialBody {
     this.themeColor = themeColor;
     this.themeImage = themeImage;
 
-    this.lengthOfDayInHours = this.rotationRate; /* Hours per cycle */
-    this.lengthOfDay = this.rotationRate / 24; /* Real-Earth day per cycle */
-    this.angularRotationRate = 6 / this.rotationRate;
+    this.lengthOfDayInEarthDay = this.lengthOfDay / 24; /* Real-Earth day per cycle */
+    this.angularRotationRate = 6 / this.lengthOfDay;
 
     this.childBodies = Array();
     this.locations = Array();
@@ -611,7 +610,7 @@ export default class CelestialBody {
 
 
 getTimeUntilSunriseOrSunset(mousePosition) {
-  if (this.lengthOfDay === 0) {
+  if (this.lengthOfDayInEarthDay === 0) {
       return ["", "00:00:00"];
   }
 
@@ -619,7 +618,7 @@ getTimeUntilSunriseOrSunset(mousePosition) {
   this.updateRotationRecur();
 
   // Calculate the planet's angular speed (radians per second)
-  const angularSpeed = (2 * Math.PI) / (this.lengthOfDayInHours * 3600);
+  const angularSpeed = (2 * Math.PI) / (this.lengthOfDay * 3600);
 
   if (angularSpeed === 0) {
       return ["", "00:00:00"];
@@ -693,10 +692,10 @@ getTimeUntilSunriseOrSunset(mousePosition) {
 
   // If the time is negative, add a full rotation period
   if (timeUntilEvent < 0) {
-    timeUntilEvent += this.lengthOfDayInHours;
+    timeUntilEvent += this.lengthOfDay;
   }
 
-  let offSetHourToNoon = (hourAngle / (Math.PI * 2)) * this.lengthOfDayInHours;
+  let offSetHourToNoon = (hourAngle / (Math.PI * 2)) * this.lengthOfDay;
   let offSetHourToNoonStr = offSetHourToNoon >= 0 ? "+ " + formatTime(offSetHourToNoon) : "− " + formatTime(-offSetHourToNoon);
 
   // Return the event type, time until the event, and local time
@@ -786,10 +785,10 @@ getTimeUntilSunriseOrSunset(mousePosition) {
   }
 
   getCurrentCycle() {
-    if (this.lengthOfDay === 0) {
+    if (this.lengthOfDayInEarthDay === 0) {
       return 0;
     } else {
-      return getNumDaysSinceAnchor() / this.lengthOfDay;
+      return getNumDaysSinceAnchor() / this.lengthOfDayInEarthDay;
     }
   }
 

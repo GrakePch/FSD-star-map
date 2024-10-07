@@ -36,8 +36,8 @@ class UserInterface {
       document.getElementById("target-name").innerHTML = cbody.name;
       document.getElementById("target-type").innerHTML = cbody.parentBody ? `${cbody.type} of ${cbody.parentBody.name}` : cbody.type;
       document.getElementById("target-radius").innerHTML = cbody.bodyRadius?.toFixed(0) + " km";
-      document.getElementById("target-length-of-day").innerHTML = formatTime(cbody.rotationRate);
-      document.getElementById("target-hour-angle").innerHTML = (cbody.rotationRate ? (360 / cbody.rotationRate)?.toFixed(2) : 0) + "°";
+      document.getElementById("target-length-of-day").innerHTML = formatTime(cbody.lengthOfDay);
+      document.getElementById("target-hour-angle").innerHTML = (cbody.lengthOfDay ? (360 / cbody.lengthOfDay)?.toFixed(2) : 0) + "°";
       document.getElementById("target-orbital-radius").innerHTML = `≈${(cbody.orbitalRadius / 1000)?.toFixed(0)} Mm`;
       document.getElementById("target-orbital-inclination").innerHTML = cbody.orbitalInclination?.toFixed(0) + "°";
     }
