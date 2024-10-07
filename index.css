@@ -102,19 +102,24 @@ body {
     height: calc(var(--icon-size) - 2px);
 }
 
-.label-location.medium {
-    --icon-size: 16px;
+.label-location.small .icon {
+    --icon-size: 2px;
+    background-color: #fff;
+    border: 1px solid #000;
 }
 
-.label-location.large .label {
-    font-size: 16px;
-    font-weight: 600;
+.label-location.medium {
+    --icon-size: 16px;
 }
 
 .label-location.large {
     --icon-size: 20px;
 }
 
+.label-location.large .label {
+    font-size: 16px;
+    font-weight: 600;
+}
 
 .navigation-tree {
     position: absolute;
@@ -298,6 +303,10 @@ body {
     font-family: var(--font-geom);
     font-weight: 500;
     line-height: 110%;
+}
+
+#location-target-name {
+    font-size: 1.5em;
 }
 
 .info-type {

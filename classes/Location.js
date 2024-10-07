@@ -41,7 +41,11 @@ export default class Location {
     markerEle.className = "icon";
     container.insertAdjacentElement("beforeend", markerEle);
 
-    container.className += labelAppearances[this.type]?.size === "L" ? " large" : " medium";
+    if (this.type !== "Orbital marker") {
+      container.classList.add(labelAppearances[this.type]?.size === "L" ? "large" : "medium");
+    } else {
+      container.classList.add("small")
+    }
     let iconName = labelAppearances[this.type]?.icon || "circle_medium";
     markerEle.insertAdjacentElement("beforeend", icon(iconName));
     if (this.isPrivate) {
@@ -57,8 +61,11 @@ export default class Location {
     this.label = labelObj;
     this.parentBody.meshBody.add(this.label);
 
-    if (this.isInOrbit) {
+    if (this.isInOrbit && this.type !== "Orbital marker") {
       this.#createMeshOrbit();
+    }
+    if (this.isInOrbit || this.type === "Orbital marker") {
+      this.#createElevationLine();
     }
   }
 
@@ -79,6 +86,12 @@ export default class Location {
   showOrbit(show) {
     if (this.meshOrbit) {
       this.meshOrbit.visible = show;
+    }
+  }
+
+  showElevationLine(show) {
+    if (this.meshElevationLine) {
+      this.meshElevationLine.visible = show;
     }
   }
 
@@ -105,7 +118,7 @@ export default class Location {
     const itemSize = 3;
     geoCircle.setAttribute("position", new THREE.BufferAttribute(geoCircle.attributes.position.array.slice(itemSize, geoCircle.attributes.position.array.length - itemSize), itemSize));
     geoCircle.index = null;
-    const matCircle = new THREE.LineBasicMaterial({ color: 0x404040 });
+    const matCircle = new THREE.LineBasicMaterial({ color: 0x808080 });
     const meshOrbit = new THREE.LineLoop(geoCircle, matCircle);
     meshOrbit.rotateX(Math.PI / 2);
     meshOrbit.position.set(0, this.coordinatesRel.y, 0);
@@ -113,6 +126,20 @@ export default class Location {
 
     this.meshOrbit = meshOrbit;
     this.parentBody.meshBody.add(this.meshOrbit);
+  }
+
+  #createElevationLine() {
+    const geomLine = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(
+        this.coordinatesRel.x, 
+        this.coordinatesRel.y, 
+        this.coordinatesRel.z
+      ), 
+      new THREE.Vector3(0, 0, 0)
+    ]);
+    const matLine = new THREE.LineBasicMaterial({color: 0x808080});
+    this.meshElevationLine = new THREE.Line(geomLine, matLine);
+    this.parentBody.meshBody.add(this.meshElevationLine);
   }
 }
 

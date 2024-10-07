@@ -5,6 +5,17 @@ import Ctrls from "./Controls.js";
 import { euclideanDist, getNumDaysSinceAnchor, modulo } from "../utils.js";
 import UI from "./UI.js";
 import { icon } from "../icons.js";
+import Location from "./Location.js";
+
+const omScalar = Math.sqrt(2);
+const omCoordinates = [
+  { x: 0, y: +omScalar, z: 0 },
+  { x: 0, y: -omScalar, z: 0 },
+  { x: 0, y: 0, z: +omScalar },
+  { x: 0, y: 0, z: -omScalar },
+  { x: -omScalar, y: 0, z: 0 },
+  { x: +omScalar, y: 0, z: 0 },
+];
 
 export default class CelestialBody {
   constructor(
@@ -83,11 +94,13 @@ export default class CelestialBody {
         ? `rgb(${this.themeColor.r}, ${this.themeColor.g}, ${this.themeColor.b})`
         : 0xffffff;
       this.#createMeshOrbit([0, 0, 0], color);
+      this.#createOMs();
     }
     if (this.type === "Moon") {
       this.#createMeshSphere(0x404040);
       this.#createMeshOrbit(this.parentBody.getPosition(), 0x404040);
       this.meshGroup.attach(this.meshOrbit);
+      this.#createOMs();
     }
     if (this.type === "Jump Point") {
       this.#createMeshOrbit([0, 0, 0], 0x404040);
@@ -235,6 +248,21 @@ export default class CelestialBody {
     const elevationLine = new THREE.Line(geometry, material);
 
     this.meshBody.add(elevationLine);
+  }
+
+  #createOMs() {
+    for (let i = 0; i < 6; ++i) {
+      let location = new Location(
+        `OM-${i + 1}`, "Orbital marker", this, this.parentStar, 
+        {
+          x: omCoordinates[i].x * this.bodyRadius, 
+          y: omCoordinates[i].y * this.bodyRadius, 
+          z: omCoordinates[i].z * this.bodyRadius
+        }, 
+        0, 1, null, null, null
+      )
+      this.locations.push(location)
+    }
   }
 
   updateMapsRecur(loadHD) {
@@ -742,6 +770,12 @@ getTimeUntilSunriseOrSunset(mousePosition) {
       location.showOrbit(show);
     }
   }
+  
+  showLocationsElevationLine(show) {
+    for (const location of this.locations) {
+      location.showElevationLine(show);
+    }
+  }
 
   updateLocationVisibility() {
     if (Ctrls.controls.getDistance() < Math.max(this.bodyRadius * 5, 1000)) {
@@ -749,9 +783,11 @@ getTimeUntilSunriseOrSunset(mousePosition) {
         location.showLabel(location.checkIfAtFrontOfSphere());
       }
       this.showLocationsOrbit(true);
+      this.showLocationsElevationLine(true);
     } else {
       this.showLocations(false);
       this.showLocationsOrbit(false);
+      this.showLocationsElevationLine(false);
     }
   }
 
