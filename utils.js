@@ -29,5 +29,14 @@ export function getNumDaysSinceAnchor() {
 }
 
 export function modulo(dividend, divisor) {
-	return (dividend % divisor + divisor) % divisor;
+  return ((dividend % divisor) + divisor) % divisor;
+}
+
+export function formatTime(hours) {
+  const hourNumber = Math.floor(hours);
+  const remainMinutes = (hours - hourNumber) * 60;
+  const minuteNumber = Math.floor(remainMinutes);
+  const remainSeconds = (remainMinutes - minuteNumber) * 60;
+  const secondNumber = Math.round(remainSeconds);
+  return `${hourNumber}:${minuteNumber.toString().padStart(2, "0")}:${secondNumber.toString().padStart(2, "0")}`;
 }

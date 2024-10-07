@@ -81,6 +81,13 @@ function animate() {
   if (renderer.info.render.frame % 2 === 0 && UI.controlTarget) {
     UI.controlTarget.updateLocationVisibility();
   }
+  if (renderer.info.render.frame % 2 === 0 && UI.controlLocationTarget) {
+    const posWorld = new THREE.Vector3();
+    UI.controlLocationTarget.label.getWorldPosition(posWorld);
+    let [sunEvent, localTime] = UI.controlLocationTarget.parentBody.getTimeUntilSunriseOrSunset(posWorld);
+    
+    document.getElementById("location-target-local-time").innerHTML = localTime;
+  }
 
   controls.update();
   renderer.render(scene, camera);

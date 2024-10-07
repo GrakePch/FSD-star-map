@@ -29,6 +29,11 @@ body {
     z-index: 100;
 }
 
+.cursor-info {
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
 .label {
     color: #fff;
     font-size: 12px;
@@ -339,4 +344,8 @@ body {
 .info-panel>.key-values>div>p:last-child {
     text-align: right;
     flex-grow: 1;
+}
+
+.tabular-nums {
+    font-variant-numeric: tabular-nums;
 }

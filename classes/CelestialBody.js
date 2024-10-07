@@ -2,7 +2,7 @@ import DB from "./Database.js";
 import * as THREE from "three";
 import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 import Ctrls from "./Controls.js";
-import { euclideanDist, getNumDaysSinceAnchor, modulo } from "../utils.js";
+import { euclideanDist, formatTime, getNumDaysSinceAnchor, modulo } from "../utils.js";
 import UI from "./UI.js";
 import { icon } from "../icons.js";
 import Location from "./Location.js";
@@ -43,7 +43,7 @@ export default class CelestialBody {
     this.coordinates = coordinates;
     this.rotationQuanternion = rotationQuanternion;
     this.bodyRadius = bodyRadius;
-    this.rotationRate = rotationRate || 0;
+    this.rotationRate = rotationRate || 0; /* Hours per cycle */
     this.rotationCorrection = rotationCorrection || 0;
     this.orbitAngle = orbitAngle;
     this.orbitalRadius = orbitalRadius;
@@ -52,7 +52,8 @@ export default class CelestialBody {
     this.themeColor = themeColor;
     this.themeImage = themeImage;
 
-    this.lengthOfDay = (3600 * this.rotationRate) / 86400;
+    this.lengthOfDayInHours = this.rotationRate; /* Hours per cycle */
+    this.lengthOfDay = this.rotationRate / 24; /* Real-Earth day per cycle */
     this.angularRotationRate = 6 / this.rotationRate;
 
     this.childBodies = Array();
@@ -576,12 +577,16 @@ export default class CelestialBody {
                 }
 
                 // Get time until sunrise or sunset, passing absolute coordinates
-                const surfaceTime = focusedBody.getTimeUntilSunriseOrSunset(point);
+                const [sunEvent, localTime] = focusedBody.getTimeUntilSunriseOrSunset(point);
+
+                const latitudeStr = (latitude>= 0 ? "+" : "−") + Math.abs(latitude.toFixed(0));
+                const longitudeStr = (longitude>= 0 ? "+" : "−") + Math.abs(longitude.toFixed(0));
 
                 // Display latitude, longitude, and surface time information
-                const info = `Latitude: ${latitude.toFixed(2)}°, Longitude: ${longitude.toFixed(2)}°, ${surfaceTime}`;
+                const info = `Lat.${latitudeStr}°, Long.${longitudeStr}°<br/>${localTime}<br/>${sunEvent}`;
                 coordinatesDiv.innerHTML = info;
                 coordinatesDiv.style.display = "block";
+                coordinatesDiv.classList.add("cursor-info");
                 coordinatesDiv.style.left = `${((mouse.x + 1) * window.innerWidth) / 2 + 10}px`;
                 coordinatesDiv.style.top = `${((-mouse.y + 1) * window.innerHeight) / 2 + 10}px`;
 
@@ -607,17 +612,17 @@ export default class CelestialBody {
 
 getTimeUntilSunriseOrSunset(mousePosition) {
   if (this.lengthOfDay === 0) {
-      return "00:00:00";
+      return ["", "00:00:00"];
   }
 
   // Ensure the rotation state is up-to-date
   this.updateRotationRecur();
 
   // Calculate the planet's angular speed (radians per second)
-  const angularSpeed = (2 * Math.PI) / (this.lengthOfDay * 24 * 3600);
+  const angularSpeed = (2 * Math.PI) / (this.lengthOfDayInHours * 3600);
 
   if (angularSpeed === 0) {
-      return "00:00:00";
+      return ["", "00:00:00"];
   }
 
   // Get the direction vector of the star in the planet's local coordinate system
@@ -641,7 +646,11 @@ getTimeUntilSunriseOrSunset(mousePosition) {
   let hourAngle = subsolarLongitude - longitude;
 
   // Normalize to [-π, π]
-  hourAngle = ((hourAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
+  if (hourAngle > Math.PI) {
+    hourAngle = (hourAngle % (2 * Math.PI)) - 2 * Math.PI;
+  } else if (hourAngle < -Math.PI) {
+    hourAngle = (hourAngle % (2 * Math.PI)) + 2 * Math.PI;
+  }
 
   // Calculate the cosine of the zenith angle
   const cosZenithAngle = Math.sin(subsolarLatitude) * Math.sin(latitude) + Math.cos(subsolarLatitude) * Math.cos(latitude) * Math.cos(hourAngle);
@@ -654,59 +663,44 @@ getTimeUntilSunriseOrSunset(mousePosition) {
 
   let H0;
   if (cosH0 >= 1) {
-      // The sun is always below the horizon, never rises
-      return "The sun never rises - Local time: --:--:--";
+    // The sun is always below the horizon, never rises
+    return ["Polar night", "--:--:--"]; //TODO: local time is still applicable!
   } else if (cosH0 <= -1) {
-      // The sun is always above the horizon, never sets
-      return "The sun never sets - Local time: --:--:--";
+    // The sun is always above the horizon, never sets
+    return ["Polar day", "--:--:--"];
   } else {
-      H0 = Math.acos(cosH0);
+    H0 = Math.acos(cosH0);
   }
 
   let eventType;
   let angleUntilEvent;
 
   if (isInSunlight) {
-      // Currently in daylight, calculate the time until sunset
-      eventType = "Time until sunset";
-      angleUntilEvent = hourAngle - H0;
+    // Currently in daylight, calculate the time until sunset
+    eventType = "Sunset T − ";
+    angleUntilEvent = hourAngle - H0;
   } else {
-      // Currently at night, calculate the time until sunrise
-      eventType = "Time until sunrise";
-      angleUntilEvent = hourAngle + H0;
+    // Currently at night, calculate the time until sunrise
+    eventType = "Sunrise T − ";
+    angleUntilEvent = hourAngle + H0;
   }
 
   // Normalize angleUntilEvent to [-π, π]
   angleUntilEvent = ((angleUntilEvent + Math.PI) % (2 * Math.PI)) - Math.PI;
 
   // Calculate the time until the event
-  let timeUntilEvent = -angleUntilEvent / angularSpeed; // Since the angle decreases, time increases, so take the negative value
+  let timeUntilEvent = -angleUntilEvent / angularSpeed / 3600; // Since the angle decreases, time increases, so take the negative value
 
   // If the time is negative, add a full rotation period
   if (timeUntilEvent < 0) {
-      timeUntilEvent += this.lengthOfDay * 24 * 3600;
+    timeUntilEvent += this.lengthOfDayInHours;
   }
 
-  // Calculate local time, the subsolar point is at 12:00
-  let localTimeHours = ((hourAngle + Math.PI) / (2 * Math.PI)) * 24;
-
-  // Normalize local time to [0, 24)
-  localTimeHours = (localTimeHours + 24) % 24;
-
-  // Format local time as HH:MM:SS
-  const localHours = Math.floor(localTimeHours);
-  const localMinutes = Math.floor((localTimeHours % 1) * 60);
-  const localSeconds = Math.floor(((localTimeHours * 3600) % 60));
-
-  // Format the time until the event
-  const hours = Math.floor(timeUntilEvent / 3600);
-  const minutes = Math.floor((timeUntilEvent % 3600) / 60);
-  const seconds = Math.floor(timeUntilEvent % 60);
-
-  const pad = (num) => String(Math.floor(num)).padStart(2, '0');
+  let offSetHourToNoon = (hourAngle / (Math.PI * 2)) * this.lengthOfDayInHours;
+  let offSetHourToNoonStr = offSetHourToNoon >= 0 ? "+ " + formatTime(offSetHourToNoon) : "− " + formatTime(-offSetHourToNoon);
 
   // Return the event type, time until the event, and local time
-  return `${eventType} ${pad(hours)}:${pad(minutes)}:${pad(seconds)} - Local time: ${pad(localHours)}:${pad(localMinutes)}:${pad(localSeconds)}`;
+  return [`${eventType}${formatTime(timeUntilEvent)}`, `Noon T ${offSetHourToNoonStr}`];
 }
 
   showLabel(show) {
