@@ -590,9 +590,6 @@ getTimeUntilSunriseOrSunset(worldPos) {
       return ["", "00:00:00"];
   }
 
-  // Ensure the rotation state is up-to-date
-  this.updateRotationRecur();
-
   // Calculate the planet's angular speed (radians per second)
   const angularSpeed = (2 * Math.PI) / (this.lengthOfDay * 3600);
 
@@ -610,12 +607,11 @@ getTimeUntilSunriseOrSunset(worldPos) {
   const subsolarLatitude = Math.PI / 2 - subsolarSpherical.phi;
 
 
-  // Convert the mouse click world coordinates to the planet's local coordinates
-  const localPoint = this.meshBody.worldToLocal(worldPos.clone()).normalize();
-
-  // Calculate the longitude and latitude of the given point
-  const longitude = Math.atan2(localPoint.z, localPoint.x);
-  const latitude = Math.asin(localPoint.y);
+  // Convert worldPos to local spherical
+  const localPoint = this.meshBody.worldToLocal(worldPos.clone());
+  const localSpher = cartesianToSpherical(...localPoint);
+  const longitude = localSpher.theta;
+  const latitude = Math.PI / 2 - localSpher.phi;
 
   // Adjust the hour angle calculation, reverse the hour angle to correct the sunrise and sunset positions
   let hourAngle = subsolarLongitude - longitude;
@@ -636,19 +632,19 @@ getTimeUntilSunriseOrSunset(worldPos) {
   // Calculate the hour angle of sunrise/sunset
   const cosH0 = -Math.tan(subsolarLatitude) * Math.tan(latitude);
 
+  let eventType;
+  let angleUntilEvent = null;
+  let timeUntilEvent = null;
+
   let H0;
   if (cosH0 >= 1) {
     // The sun is always below the horizon, never rises
-    return ["Polar night", "--:--:--"]; //TODO: local time is still applicable!
+    eventType = "Polar night";
   } else if (cosH0 <= -1) {
     // The sun is always above the horizon, never sets
-    return ["Polar day", "--:--:--"];
+    eventType = "Polar day";
   } else {
     H0 = Math.acos(cosH0);
-  }
-
-  let eventType;
-  let angleUntilEvent;
 
   if (isInSunlight) {
     // Currently in daylight, calculate the time until sunset
@@ -664,18 +660,20 @@ getTimeUntilSunriseOrSunset(worldPos) {
   angleUntilEvent = ((angleUntilEvent + Math.PI) % (2 * Math.PI)) - Math.PI;
 
   // Calculate the time until the event
-  let timeUntilEvent = -angleUntilEvent / angularSpeed / 3600; // Since the angle decreases, time increases, so take the negative value
+  timeUntilEvent = -angleUntilEvent / angularSpeed / 3600; // Since the angle decreases, time increases, so take the negative value
 
   // If the time is negative, add a full rotation period
   if (timeUntilEvent < 0) {
     timeUntilEvent += this.lengthOfDay;
+  }
+  
   }
 
   let offSetHourToNoon = (hourAngle / (Math.PI * 2)) * this.lengthOfDay;
   let offSetHourToNoonStr = offSetHourToNoon >= 0 ? "+ " + formatTime(offSetHourToNoon) : "− " + formatTime(-offSetHourToNoon);
 
   // Return the event type, time until the event, and local time
-  return [`${eventType}${formatTime(timeUntilEvent)}`, `Noon T ${offSetHourToNoonStr}`];
+  return [`${eventType}${timeUntilEvent ? formatTime(timeUntilEvent) : ""}`, `Noon T ${offSetHourToNoonStr}`];
 }
 
   showLabel(show) {
