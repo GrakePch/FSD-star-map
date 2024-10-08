@@ -2,7 +2,7 @@ import DB from "./Database.js";
 import * as THREE from "three";
 import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 import Ctrls from "./Controls.js";
-import { euclideanDist, formatTime, getNumDaysSinceAnchor, modulo } from "../utils.js";
+import { cartesianToFormatLatLong, cartesianToSpherical, euclideanDist, formatTime, getNumDaysSinceAnchor, modulo } from "../utils.js";
 import UI from "./UI.js";
 import { icon } from "../icons.js";
 import Location from "./Location.js";
@@ -106,8 +106,6 @@ export default class CelestialBody {
       this.#createMeshOrbit([0, 0, 0], 0x404040);
       this.meshGroup.attach(this.meshOrbit);
     }
-
-    this.#loadMaps(false);
 
     this.#createMeshRing();
 
@@ -265,40 +263,34 @@ export default class CelestialBody {
     }
   }
 
-  updateMapsRecur(loadHD) {
-    this.#loadMaps(loadHD);
+  async updateMapsRecur(loadHD) {
+    await this.#loadMapsAsync(loadHD);
     for (const body of this.childBodies) {
       body.updateMapsRecur(loadHD);
     }
   }
 
-  #loadMaps(loadHD) {
+  async #loadMapsAsync(loadHD) {
     if (!["Planet", "Moon"].includes(this.type)) return;
     const textureLoader = new THREE.TextureLoader();
-    textureLoader.load(
-      `./public/textures/${
-        loadHD ? "bodies-hd" : "bodies"
-      }/${this.name.toLowerCase()}.webp`,
-      (t) => {
+    await textureLoader
+      .loadAsync(`./public/textures/${loadHD ? "bodies-hd" : "bodies"}/${this.name.toLowerCase()}.webp`)
+      .then((t) => {
         t.colorSpace = THREE.SRGBColorSpace;
         this.meshBody.material.map = t;
         this.meshBody.material.color.set(0xffffff);
         this.meshBody.material.needsUpdate = true;
-      },
-      undefined,
-      (err) => console.error(err)
-    );
+      })
+      .catch((err) => null);
 
-    textureLoader.load(
-      `./public/textures/bodies-reflection/${this.name.toLowerCase()}.webp`,
-      (t) => {
+    await textureLoader
+      .loadAsync(`./public/textures/bodies-reflection/${this.name.toLowerCase()}.webp`)
+      .then((t) => {
         t.colorSpace = THREE.SRGBColorSpace;
         this.meshBody.material.roughnessMap = t;
         this.meshBody.material.needsUpdate = true;
-      },
-      undefined,
-      (err) => undefined
-    );
+      })
+      .catch((err) => null);
   }
 
   createNavDOMAt(element, layer) {
@@ -560,29 +552,13 @@ export default class CelestialBody {
                 const localPoint = focusedBody.meshBody.worldToLocal(point.clone());
 
                 // Calculate latitude and longitude
-                const radius = focusedBody.bodyRadius;
-                const phi = Math.acos(localPoint.y / radius); // Polar angle
-                let theta = Math.atan2(localPoint.z, localPoint.x); // Azimuthal angle
-                theta = -theta; // Reverse theta to match the planet's rotation
-                const latitude = (phi * 180) / Math.PI - 90; // Latitude
-                let longitude = (theta * 180) / Math.PI; // Longitude
-                longitude = longitude - 180; // 保持偏移修正
-
-                // Normalize longitude to be within -180 to 180 degrees
-                if (longitude < -180) {
-                    longitude += 360;
-                } else if (longitude > 180) {
-                    longitude -= 360;
-                }
+                const latLong = cartesianToFormatLatLong(localPoint.x , localPoint.y, localPoint.z)
 
                 // Get time until sunrise or sunset, passing absolute coordinates
                 const [sunEvent, localTime] = focusedBody.getTimeUntilSunriseOrSunset(point);
 
-                const latitudeStr = (latitude>= 0 ? "+" : "−") + Math.abs(latitude.toFixed(0));
-                const longitudeStr = (longitude>= 0 ? "+" : "−") + Math.abs(longitude.toFixed(0));
-
                 // Display latitude, longitude, and surface time information
-                const info = `Lat.${latitudeStr}°, Long.${longitudeStr}°<br/>${localTime}<br/>${sunEvent}`;
+                const info = `${latLong.lat}, ${latLong.long}<br/>${localTime}<br/>${sunEvent}`;
                 coordinatesDiv.innerHTML = info;
                 coordinatesDiv.style.display = "block";
                 coordinatesDiv.classList.add("cursor-info");
@@ -609,7 +585,7 @@ export default class CelestialBody {
 }
 
 
-getTimeUntilSunriseOrSunset(mousePosition) {
+getTimeUntilSunriseOrSunset(worldPos) {
   if (this.lengthOfDayInEarthDay === 0) {
       return ["", "00:00:00"];
   }
@@ -629,13 +605,13 @@ getTimeUntilSunriseOrSunset(mousePosition) {
       .sub(this.meshBody.getWorldPosition(new THREE.Vector3()))
       .normalize();
   const sunDirectionLocal = sunDirectionWorld.applyQuaternion(this.meshBody.quaternion.clone().invert());
+  const subsolarSpherical = cartesianToSpherical(...sunDirectionLocal)
+  const subsolarLongitude = subsolarSpherical.theta;
+  const subsolarLatitude = Math.PI / 2 - subsolarSpherical.phi;
 
-  // Calculate the longitude and latitude of the subsolar point
-  const subsolarLongitude = Math.atan2(sunDirectionLocal.z, sunDirectionLocal.x);
-  const subsolarLatitude = Math.asin(sunDirectionLocal.y);
 
   // Convert the mouse click world coordinates to the planet's local coordinates
-  const localPoint = this.meshBody.worldToLocal(mousePosition.clone()).normalize();
+  const localPoint = this.meshBody.worldToLocal(worldPos.clone()).normalize();
 
   // Calculate the longitude and latitude of the given point
   const longitude = Math.atan2(localPoint.z, localPoint.x);

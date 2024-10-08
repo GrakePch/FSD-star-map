@@ -1,4 +1,4 @@
-import { formatTime } from "../utils.js";
+import { cartesianToFormatLatLong, formatTime } from "../utils.js";
 
 class UserInterface {
   constructor() {
@@ -22,6 +22,8 @@ class UserInterface {
   updateControlTarget(cbody) {
     if (this.controlTarget) {
       this.controlTarget.showLocations(false);
+      this.controlTarget.showLocationsOrbit(false);
+      this.controlTarget.showLocationsElevationLine(false);
     }
     if (this.controlLocationTarget) {
       this.controlLocationTarget = null;
@@ -45,13 +47,7 @@ class UserInterface {
 
   updateControlLocationTarget(location) {
     document.getElementById("target-panel").classList.add("hide");
-    if (this.controlTarget) {
-      this.controlTarget.showLocations(false);
-      this.controlTarget = null;
-    }
-    if (location?.parentBody) {
-      this.controlTarget = location.parentBody;
-    }
+    this.controlTarget = location?.parentBody;
     this.controlLocationTarget = location;
     if (!location) {
       document.getElementById("location-target-panel").classList.add("hide");
@@ -64,6 +60,10 @@ class UserInterface {
       document.getElementById("location-target-is-private").innerHTML = location.isPrivate ? "Yes" : "No";
       document.getElementById("location-target-affiliation").innerHTML = location.affiliation || "-";
       document.getElementById("location-target-altitude").innerHTML = location.parentBody ? ((location.distanceToParentCenter - location.parentBody.bodyRadius) * 1000).toFixed(0) + " m" : "N/A";
+
+      const latLong = cartesianToFormatLatLong(location.coordinatesRel.x, location.coordinatesRel.y, location.coordinatesRel.z);
+      document.getElementById("location-target-latitude").innerHTML = latLong.lat;
+      document.getElementById("location-target-longitude").innerHTML = latLong.long;
     }
   }
 

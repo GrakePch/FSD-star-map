@@ -2,7 +2,7 @@ import * as THREE from "three";
 import DB from "./classes/Database.js";
 import { CSS2DRenderer } from "three/addons/renderers/CSS2DRenderer.js";
 import Ctrls from "./classes/Controls.js";
-import { euclideanDist, getBodyByName, getLocationByName } from "./utils.js";
+import { getBodyByName } from "./utils.js";
 import UI from "./classes/UI.js";
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
@@ -46,14 +46,15 @@ async function init() {
   rootBody.createMesh();
   rootBody.createChildrenMesh();
   rootBody.addToScene(scene);
+  await rootBody.updateMapsRecur(false);
 
   rootBody.createNavDOMAt(document.querySelector("#nav-panel"), 0);
 
   // 调用 showCoordinatesOnHover 方法
   rootBody.showCoordinatesOnHover();
 
-  document.getElementById("load-HD-textures").addEventListener("change", (e) => {
-    rootBody.updateMapsRecur(e.target.checked);
+  document.getElementById("load-HD-textures").addEventListener("change", async (e) => {
+    await rootBody.updateMapsRecur(e.target.checked);
   });
 }
 init();
@@ -85,7 +86,7 @@ function animate() {
     const posWorld = new THREE.Vector3();
     UI.controlLocationTarget.label.getWorldPosition(posWorld);
     let [sunEvent, localTime] = UI.controlLocationTarget.parentBody.getTimeUntilSunriseOrSunset(posWorld);
-    
+
     document.getElementById("location-target-local-time").innerHTML = localTime;
   }
 

@@ -139,6 +139,7 @@ export default class Location {
     ]);
     const matLine = new THREE.LineBasicMaterial({color: 0x808080});
     this.meshElevationLine = new THREE.Line(geomLine, matLine);
+    this.meshElevationLine.visible = false;
     this.parentBody.meshBody.add(this.meshElevationLine);
   }
 }

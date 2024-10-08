@@ -40,3 +40,47 @@ export function formatTime(hours) {
   const secondNumber = Math.round(remainSeconds);
   return `${hourNumber}:${minuteNumber.toString().padStart(2, "0")}:${secondNumber.toString().padStart(2, "0")}`;
 }
+
+export function cartesianToSpherical(x, y, z) {
+  const r = Math.sqrt(x * x + y * y + z * z);
+  const theta = Math.atan2(z, x); // azimuthal angle: randian in the xz-plane from the positive x
+  const phi = Math.acos(y / r); // polar angle: radian from the positive z
+  return { r: r, theta: theta, phi: phi };
+}
+
+/* Spherical to Latitude-longitude coordinates centered at OM-5 */
+export function sphericalToLatLong(theta, phi) {
+  const latitude = Math.PI / 2 - phi;
+  let longitude = Math.PI - theta;
+  if (longitude > Math.PI) {
+    longitude -= Math.PI * 2;
+  }
+  return { lat: radToDeg(latitude), long: radToDeg(longitude) };
+}
+
+export function radToDeg(radians) {
+  return radians * (180 / Math.PI);
+}
+
+export function degToRad(degrees) {
+  return degrees * (Math.PI / 180);
+}
+
+export function formatAngle(degrees) {
+  const degreeNumber = Math.floor(degrees);
+  const remainMinutes = (degrees - degreeNumber) * 60;
+  const minuteNumber = Math.floor(remainMinutes);
+  const remainSeconds = (remainMinutes - minuteNumber) * 60;
+  const secondNumber = Math.round(remainSeconds);
+  return `${degreeNumber}° ${minuteNumber.toString().padStart(2, "0")}' ${secondNumber.toString().padStart(2, "0")}"`;
+}
+
+export function cartesianToFormatLatLong(x, y, z) {
+  const sph = cartesianToSpherical(x, y, z);
+  const latLong = sphericalToLatLong(sph.theta, sph.phi);
+  const lat = latLong.lat;
+  const long = latLong.long;
+  const latStr = lat === 0 ? formatAngle(lat) : lat > 0 ? formatAngle(lat) + " N" : formatAngle(-lat) + " S";
+  const longStr = long === 0 ? formatAngle(long) : long > 0 ? formatAngle(long) + " E" : formatAngle(-long) + " W";
+  return { lat: latStr, long: longStr };
+}
