@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 import Ctrls from "./Controls.js";
 import { icon } from "../icons.js";
-import { euclideanDist } from "../utils.js";
+import { cartesianToLatLong, euclideanDist } from "../utils.js";
 import UI from "./UI.js";
 
 export default class Location {
@@ -19,15 +19,25 @@ export default class Location {
     this.themeImage = themeImage;
     this.wikiLink = wikiLink;
 
+    const latLong = cartesianToLatLong(this.coordinatesRel.x, this.coordinatesRel.y, this.coordinatesRel.z)
+    this.latitude = latLong.lat;
+    this.longitude = latLong.long;
     this.distanceToParentCenter = null;
+    this.altitude = null;
     this.isInOrbit = null;
+
+    this.DOMLabelContainer = null;
+    this.label = null;
+    this.meshOrbit = null;
+    this.meshElevationLine = null;
 
     DB.locations.push(this);
   }
 
   createLabel() {
     this.distanceToParentCenter = euclideanDist(this.coordinatesRel);
-    this.isInOrbit = this.distanceToParentCenter - this.parentBody.bodyRadius > 100;
+    this.altitude = this.distanceToParentCenter - this.parentBody.bodyRadius;
+    this.isInOrbit = this.altitude > 100;
 
     const container = document.createElement("div");
     container.className = "label-location hide " + this.type.toLowerCase().split(" ").join("_");

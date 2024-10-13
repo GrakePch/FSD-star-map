@@ -2,7 +2,7 @@ import DB from "./Database.js";
 import * as THREE from "three";
 import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 import Ctrls from "./Controls.js";
-import { cartesianToFormatLatLong, cartesianToSpherical, euclideanDist, formatTime, getNumDaysSinceAnchor, modulo } from "../utils.js";
+import { cartesianToLatLong, degToRad, euclideanDist, formatLatitude, formatLongitude, formatTime, getNumDaysSinceAnchor, modulo, radToDeg } from "../utils.js";
 import UI from "./UI.js";
 import { icon } from "../icons.js";
 import Location from "./Location.js";
@@ -54,6 +54,10 @@ export default class CelestialBody {
 
     this.lengthOfDayInEarthDay = this.lengthOfDay / 24; /* Real-Earth day per cycle */
     this.angularRotationRate = 6 / this.lengthOfDay;
+    this.angularSpeed = (2 * Math.PI) / (this.lengthOfDay * 3600); /* radians per second */
+
+    this.subsolarLatitude = null;
+    this.polarCircleLatitude = null;
 
     this.childBodies = Array();
     this.locations = Array();
@@ -68,6 +72,14 @@ export default class CelestialBody {
           })
       )
     );
+
+    this.meshGroup = null;
+    this.meshBody = null;
+    this.meshOrbit = null;
+    this.meshRing = null;
+    this.lightSource = null;
+    this.label = null;
+
 
     // 将当前星球对象添加到 UI 类的 celestialBodies 数组中
     UI.addCelestialBody(this);
@@ -119,6 +131,14 @@ export default class CelestialBody {
 
     if (this.parentBody) {
       this.parentBody.meshGroup.attach(this.meshGroup);
+    }
+
+    if (this.type === "Planet" || this.type === "Moon") {
+      this.subsolarLatitude = radToDeg((Math.atan2(
+        this.parentStar.coordinates.y - this.coordinates.y, 
+        Math.sqrt((this.parentStar.coordinates.x - this.coordinates.x) ** 2
+                + (this.parentStar.coordinates.z - this.coordinates.z) ** 2))));
+      this.polarCircleLatitude = 90 - Math.abs(this.subsolarLatitude);
     }
   }
 
@@ -522,7 +542,7 @@ export default class CelestialBody {
     };
   }
 
-   showCoordinatesOnHover() {
+  showCoordinatesOnHover() {
     const coordinatesDiv = document.getElementById("coordinates");
 
     // Save mouse position
@@ -552,13 +572,29 @@ export default class CelestialBody {
                 const localPoint = focusedBody.meshBody.worldToLocal(point.clone());
 
                 // Calculate latitude and longitude
-                const latLong = cartesianToFormatLatLong(localPoint.x , localPoint.y, localPoint.z)
-
-                // Get time until sunrise or sunset, passing absolute coordinates
-                const [sunEvent, localTime] = focusedBody.getTimeUntilSunriseOrSunset(point);
+                const latLong = cartesianToLatLong(localPoint.x, localPoint.y, localPoint.z);
+                const lat = latLong.lat;
+                const long = latLong.long;
+                
+                const e = focusedBody.getAllSunRelatedEvents(lat, long);
 
                 // Display latitude, longitude, and surface time information
-                const info = `${latLong.lat}, ${latLong.long}<br/>${localTime}<br/>${sunEvent}`;
+                const info = `${formatLatitude(lat)}, ${formatLongitude(long)}<br/>\
+                Local Day Progress: ${e.dayProgress}%<br/>\
+                Solar Altitude Angle: ${e.solarAltitudeDegree}°<br/>\
+                Daylight Duration: ${e.daytimeDuration}<br/>\
+                Night Duration: ${e.nighttimeDuration}<br />\
+                ${e.polarDayOrNight ? e.polarDayOrNight + "<br />" : ""}\
+                ${!e.polarDayOrNight ? `Next Sunrise T-${e.timeUntilSunrise}<br />` : ""}\
+                Next Noon T-${e.timeUntilNoon}<br />\
+                ${!e.polarDayOrNight ? `Next Sunset T-${e.timeUntilSunset}<br />` : ""}\
+                Next Midnight T-${e.timeUntilMidnight}<br />\
+                ${!e.polarDayOrNight ? `Last Sunrise T+${e.timeAfterSunrise}<br />` : ""}\
+                Last Noon T+${e.timeAfterNoon}<br />\
+                ${!e.polarDayOrNight ? `Last Sunset T+${e.timeAfterSunset}<br />` : ""}\
+                Last Midnight T+${e.timeAfterMidnight}<br />\
+                `;
+
                 coordinatesDiv.innerHTML = info;
                 coordinatesDiv.style.display = "block";
                 coordinatesDiv.classList.add("cursor-info");
@@ -582,99 +618,84 @@ export default class CelestialBody {
     };
 
     animate(); // Start the animation loop
-}
-
-
-getTimeUntilSunriseOrSunset(worldPos) {
-  if (this.lengthOfDayInEarthDay === 0) {
-      return ["", "00:00:00"];
   }
 
-  // Calculate the planet's angular speed (radians per second)
-  const angularSpeed = (2 * Math.PI) / (this.lengthOfDay * 3600);
+  getSubSolarPointRealTime() {
+    const parentStarLocalPosX = this.parentStar.coordinates.x - this.coordinates.x;
+    const parentStarLocalPosY = this.parentStar.coordinates.y - this.coordinates.y;
+    const parentStarLocalPosZ = this.parentStar.coordinates.z - this.coordinates.z;
 
-  if (angularSpeed === 0) {
-      return ["", "00:00:00"];
+    const subsolarPointUnRotated = cartesianToLatLong(parentStarLocalPosX, parentStarLocalPosY, parentStarLocalPosZ);
+
+    return [subsolarPointUnRotated.lat, subsolarPointUnRotated.long - this.getRotationDeg()];
   }
 
-  // Get the direction vector of the star in the planet's local coordinate system
-  const sunDirectionWorld = this.parentStar.meshBody.getWorldPosition(new THREE.Vector3())
-      .sub(this.meshBody.getWorldPosition(new THREE.Vector3()))
-      .normalize();
-  const sunDirectionLocal = sunDirectionWorld.applyQuaternion(this.meshBody.quaternion.clone().invert());
-  const subsolarSpherical = cartesianToSpherical(...sunDirectionLocal)
-  const subsolarLongitude = subsolarSpherical.theta;
-  const subsolarLatitude = Math.PI / 2 - subsolarSpherical.phi;
-
-
-  // Convert worldPos to local spherical
-  const localPoint = this.meshBody.worldToLocal(worldPos.clone());
-  const localSpher = cartesianToSpherical(...localPoint);
-  const longitude = localSpher.theta;
-  const latitude = Math.PI / 2 - localSpher.phi;
-
-  // Adjust the hour angle calculation, reverse the hour angle to correct the sunrise and sunset positions
-  let hourAngle = subsolarLongitude - longitude;
-
-  // Normalize to [-π, π]
-  if (hourAngle > Math.PI) {
-    hourAngle = (hourAngle % (2 * Math.PI)) - 2 * Math.PI;
-  } else if (hourAngle < -Math.PI) {
-    hourAngle = (hourAngle % (2 * Math.PI)) + 2 * Math.PI;
+  getDegreeAfterMidnight(longitude) {
+    const [subsolarLatitude, subsolarLongitude] = this.getSubSolarPointRealTime();
+    const midnightLongitude = subsolarLongitude - 180 - 360;
+    const angleDiff = (longitude - midnightLongitude) % 360;
+    return angleDiff;
   }
 
-  // Calculate the cosine of the zenith angle
-  const cosZenithAngle = Math.sin(subsolarLatitude) * Math.sin(latitude) + Math.cos(subsolarLatitude) * Math.cos(latitude) * Math.cos(hourAngle);
+  getZenithDegree(latitude, longitude) {
+    const [subsolarLatitude, subsolarLongitude] = this.getSubSolarPointRealTime();
+    let hourAngle = degToRad(longitude - subsolarLongitude);
 
-  // Determine if the point is in daylight
-  const isInSunlight = cosZenithAngle > 0;
-
-  // Calculate the hour angle of sunrise/sunset
-  const cosH0 = -Math.tan(subsolarLatitude) * Math.tan(latitude);
-
-  let eventType;
-  let angleUntilEvent = null;
-  let timeUntilEvent = null;
-
-  let H0;
-  if (cosH0 >= 1) {
-    // The sun is always below the horizon, never rises
-    eventType = "Polar night";
-  } else if (cosH0 <= -1) {
-    // The sun is always above the horizon, never sets
-    eventType = "Polar day";
-  } else {
-    H0 = Math.acos(cosH0);
-
-  if (isInSunlight) {
-    // Currently in daylight, calculate the time until sunset
-    eventType = "Sunset T − ";
-    angleUntilEvent = hourAngle - H0;
-  } else {
-    // Currently at night, calculate the time until sunrise
-    eventType = "Sunrise T − ";
-    angleUntilEvent = hourAngle + H0;
+    const cosZenithAngle = Math.sin(degToRad(subsolarLatitude)) * Math.sin(degToRad(latitude)) + Math.cos(degToRad(subsolarLatitude)) * Math.cos(degToRad(latitude)) * Math.cos(hourAngle);
+    
+    return radToDeg(Math.acos(cosZenithAngle));
   }
 
-  // Normalize angleUntilEvent to [-π, π]
-  angleUntilEvent = ((angleUntilEvent + Math.PI) % (2 * Math.PI)) - Math.PI;
+  getSunriseHourAngle(latitude) {
+    const [subsolarLatitude, subsolarLongitude] = this.getSubSolarPointRealTime();
 
-  // Calculate the time until the event
-  timeUntilEvent = -angleUntilEvent / angularSpeed / 3600; // Since the angle decreases, time increases, so take the negative value
+    const cosH0 = -Math.tan(degToRad(subsolarLatitude)) * Math.tan(degToRad(latitude));
 
-  // If the time is negative, add a full rotation period
-  if (timeUntilEvent < 0) {
-    timeUntilEvent += this.lengthOfDay;
-  }
-  
+    if (cosH0 > 1) return 0;
+    if (cosH0 < -1) return 180;
+    return radToDeg(Math.acos(cosH0));
   }
 
-  let offSetHourToNoon = (hourAngle / (Math.PI * 2)) * this.lengthOfDay;
-  let offSetHourToNoonStr = offSetHourToNoon >= 0 ? "+ " + formatTime(offSetHourToNoon) : "− " + formatTime(-offSetHourToNoon);
+  getHoursUntilDegreeAfterNoon(longitude, degree) {
+    const [subsolarLatitude, subsolarLongitude] = this.getSubSolarPointRealTime();
+    const degreeAfterNoon = subsolarLongitude + degree + 720;
+    const angleDiff = (degreeAfterNoon - longitude) % 360;
+    return angleDiff / 360 * this.lengthOfDay;
+  }
 
-  // Return the event type, time until the event, and local time
-  return [`${eventType}${timeUntilEvent ? formatTime(timeUntilEvent) : ""}`, `Noon T ${offSetHourToNoonStr}`];
-}
+  getAllSunRelatedEvents(lat, long) {
+    const sunriseHourAngle = this.getSunriseHourAngle(lat);
+
+    const dayProgressDegree = this.getDegreeAfterMidnight(long);
+    const dayProgress = (dayProgressDegree / 360) * 100;
+    const solarAltDeg = 90 - this.getZenithDegree(lat, long);
+    const daytimeDuration = ((sunriseHourAngle * 2) / 360) * this.lengthOfDay;
+    const nighttimeDuration = (1 - (sunriseHourAngle * 2) / 360) * this.lengthOfDay;
+
+    const timeUntilNoon = this.getHoursUntilDegreeAfterNoon(long, 0);
+    const timeUntilMidnight = this.getHoursUntilDegreeAfterNoon(long, 180);
+    const timeUntilSunrise = sunriseHourAngle >= 180 || sunriseHourAngle <= 0 ? Infinity : this.getHoursUntilDegreeAfterNoon(long, -sunriseHourAngle);
+    const timeUntilSunset = sunriseHourAngle >= 180 || sunriseHourAngle <= 0 ? Infinity : this.getHoursUntilDegreeAfterNoon(long, sunriseHourAngle);
+
+    return {
+      dayProgress: Math.round(dayProgress),
+      dayProgressDegree: dayProgressDegree,
+      solarAltitudeDegree: Math.round(solarAltDeg),
+      sunriseHourAngle: sunriseHourAngle,
+      daytimeDuration: formatTime(daytimeDuration),
+      nighttimeDuration: formatTime(nighttimeDuration),
+      timeUntilNoon: formatTime(timeUntilNoon),
+      timeUntilMidnight: formatTime(timeUntilMidnight),
+      timeUntilSunrise: formatTime(timeUntilSunrise),
+      timeUntilSunset: formatTime(timeUntilSunset),
+      timeAfterNoon: formatTime(this.lengthOfDay - timeUntilNoon),
+      timeAfterMidnight: formatTime(this.lengthOfDay - timeUntilMidnight),
+      timeAfterSunrise: formatTime(this.lengthOfDay - timeUntilSunrise),
+      timeAfterSunset: formatTime(this.lengthOfDay - timeUntilSunset),
+      polarDayOrNight: sunriseHourAngle >= 180 ? "Polar Day" : sunriseHourAngle <= 0 ? "Polar Night" : null,
+    };
+
+  }
 
   showLabel(show) {
     const labelEle = this.label.element;

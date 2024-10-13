@@ -1,4 +1,4 @@
-import { cartesianToFormatLatLong, formatTime } from "../utils.js";
+import { formatAngle, formatLatitude, formatLongitude, formatTime } from "../utils.js";
 
 class UserInterface {
   constructor() {
@@ -39,9 +39,11 @@ class UserInterface {
       document.getElementById("target-type").innerHTML = cbody.parentBody ? `${cbody.type} of ${cbody.parentBody.name}` : cbody.type;
       document.getElementById("target-radius").innerHTML = cbody.bodyRadius?.toFixed(0) + " km";
       document.getElementById("target-length-of-day").innerHTML = formatTime(cbody.lengthOfDay);
-      document.getElementById("target-hour-angle").innerHTML = (cbody.lengthOfDay ? (360 / cbody.lengthOfDay)?.toFixed(2) : 0) + "°";
+      document.getElementById("target-rotation-speed").innerHTML = (cbody.lengthOfDay ? (360 / cbody.lengthOfDay)?.toFixed(2) : 0) + "°/h";
       document.getElementById("target-orbital-radius").innerHTML = `≈${(cbody.orbitalRadius / 1000)?.toFixed(0)} Mm`;
       document.getElementById("target-orbital-inclination").innerHTML = cbody.orbitalInclination?.toFixed(0) + "°";
+      document.getElementById("target-subsolar-latitude").innerHTML = formatLatitude(cbody.subsolarLatitude)
+      document.getElementById("target-polar-circle-latitude").innerHTML = formatAngle(cbody.polarCircleLatitude);
     }
   }
 
@@ -59,11 +61,11 @@ class UserInterface {
       document.getElementById("location-target-is-quantum").innerHTML = location.isQuantum ? "Yes" : "No";
       document.getElementById("location-target-is-private").innerHTML = location.isPrivate ? "Yes" : "No";
       document.getElementById("location-target-affiliation").innerHTML = location.affiliation || "-";
-      document.getElementById("location-target-altitude").innerHTML = location.parentBody ? ((location.distanceToParentCenter - location.parentBody.bodyRadius) * 1000).toFixed(0) + " m" : "N/A";
+      document.getElementById("location-target-altitude").innerHTML = (location.altitude * 1000).toFixed(0) + " m";
 
-      const latLong = cartesianToFormatLatLong(location.coordinatesRel.x, location.coordinatesRel.y, location.coordinatesRel.z);
-      document.getElementById("location-target-latitude").innerHTML = latLong.lat;
-      document.getElementById("location-target-longitude").innerHTML = latLong.long;
+      document.getElementById("location-target-latitude").innerHTML = formatLatitude(location.latitude);
+      document.getElementById("location-target-longitude").innerHTML = formatLongitude(location.longitude);
+      document.getElementById("location-target-length-of-day").innerHTML = formatTime(location.parentBody?.lengthOfDay);
     }
   }
 

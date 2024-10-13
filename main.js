@@ -83,11 +83,33 @@ function animate() {
     UI.controlTarget.updateLocationVisibility();
   }
   if (renderer.info.render.frame % 2 === 0 && UI.controlLocationTarget) {
-    const posWorld = new THREE.Vector3();
-    UI.controlLocationTarget.label.getWorldPosition(posWorld);
-    let [sunEvent, localTime] = UI.controlLocationTarget.parentBody.getTimeUntilSunriseOrSunset(posWorld);
+    const lat = UI.controlLocationTarget.latitude;
+    const long = UI.controlLocationTarget.longitude;
+    const e = UI.controlLocationTarget.parentBody.getAllSunRelatedEvents(lat, long);
 
-    document.getElementById("location-target-local-time").innerHTML = localTime;
+    document.getElementById("analog-clock").style.setProperty("--sunrise-hour-angle", e.sunriseHourAngle + "deg");
+    document.getElementById("analog-clock").style.setProperty("--hand-direction", e.dayProgressDegree + "deg");
+
+    document.getElementById("location-target-day-progress").innerHTML = e.dayProgress + "%";
+    document.getElementById("location-target-solar-altitude-angle").innerHTML = e.solarAltitudeDegree + "°";
+    document.getElementById("location-target-daylight-duration").innerHTML = e.daytimeDuration;
+    document.getElementById("location-target-night-duration").innerHTML = e.nighttimeDuration;
+    if (e.polarDayOrNight) {
+      document.getElementById("location-target-polar-day-or-night-container").classList.remove("display-none");
+      document.getElementById("location-target-polar-day-or-night").innerHTML = e.polarDayOrNight;
+    } else {
+      document.getElementById("location-target-polar-day-or-night-container").classList.add("display-none");
+    }
+
+    document.getElementById("location-target-next-sunrise").innerHTML = "T\u2212" + e.timeUntilSunrise;
+    document.getElementById("location-target-next-noon").innerHTML = "T\u2212" + e.timeUntilNoon;
+    document.getElementById("location-target-next-sunset").innerHTML = "T\u2212" + e.timeUntilSunset;
+    document.getElementById("location-target-next-midnight").innerHTML = "T\u2212" + e.timeUntilMidnight;
+
+    document.getElementById("location-target-last-sunrise").innerHTML = "T+" + e.timeAfterSunrise;
+    document.getElementById("location-target-last-noon").innerHTML = "T+" + e.timeAfterNoon;
+    document.getElementById("location-target-last-sunset").innerHTML = "T+" + e.timeAfterSunset;
+    document.getElementById("location-target-last-midnight").innerHTML = "T+" + e.timeAfterMidnight;
   }
 
   controls.update();
