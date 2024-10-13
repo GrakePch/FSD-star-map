@@ -379,10 +379,14 @@ body {
     position: relative;
     margin: 0 auto;
 
-    --color-day: #fff;
-    --color-night: #222244;
+    --color-day: #dceaff;
+    --color-dawn: #af5e53;
+    --color-dusk: #af5e53;
+    --color-night: #192029;
     --sunrise-hour-angle: 60deg;
     --hand-direction: 0deg;
+    --hand-width: 6px;
+    --hand-width-half: calc(var(--hand-width) / 2);
 }
 
 #analog-clock>* {
@@ -397,9 +401,10 @@ body {
     background: conic-gradient(
         var(--color-day) 0deg, 
         var(--color-day) var(--sunrise-hour-angle), 
-        var(--color-night) calc(var(--sunrise-hour-angle) + 0deg), 
-        var(--color-night) 180deg,
-        var(--color-night) calc(360deg - var(--sunrise-hour-angle)), 
+        var(--color-dusk) min(180deg, var(--sunrise-hour-angle) + 6deg),
+        var(--color-night) min(180deg, var(--sunrise-hour-angle) + 12deg),
+        var(--color-night) max(180deg, 360deg - var(--sunrise-hour-angle) - 12deg), 
+        var(--color-dawn) max(180deg, 360deg - var(--sunrise-hour-angle) - 6deg),
         var(--color-day) calc(360deg - var(--sunrise-hour-angle)), 
         var(--color-day) 0deg
         );
@@ -407,13 +412,15 @@ body {
 }
 
 #analog-clock>.hand {
-    top: 50%;
-    left: calc(50% - 1px);
-    width: 2px;
+    top: calc(50% - var(--hand-width-half));
+    left: calc(50% - var(--hand-width-half));
+    width: var(--hand-width);
     height: 30%;
-    background-color: #ff0000;
-    /* backdrop-filter: invert(1); */
-    transform-origin: 50% 0%;
+    background-color: #222222;
+    backdrop-filter: invert(1);
+    transform-origin: 50% var(--hand-width-half);
     transform: rotate(var(--hand-direction));
     box-shadow: 0 0 2px 0 #000;
+    border-radius: var(--hand-width-half);
+    border: 2px solid #ffffff;
 }

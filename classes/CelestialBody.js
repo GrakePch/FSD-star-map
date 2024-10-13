@@ -651,8 +651,19 @@ export default class CelestialBody {
 
     const cosH0 = -Math.tan(degToRad(subsolarLatitude)) * Math.tan(degToRad(latitude));
 
-    if (cosH0 > 1) return 0;
-    if (cosH0 < -1) return 180;
+    if (cosH0 > 1) return -180; /* Sun always below the horizon */
+    if (cosH0 < -1) return 360; /* Sun always above the horizon */
+    return radToDeg(Math.acos(cosH0));
+  }
+
+  getHourAngleAtZenith(degree, latitude) {
+    const [subsolarLatitude, subsolarLongitude] = this.getSubSolarPointRealTime();
+
+    const cosH0 = Math.cos(degToRad(degree)) / (Math.cos(degToRad(subsolarLatitude)) * Math.cos(degToRad(latitude)))
+    - Math.tan(degToRad(subsolarLatitude)) * Math.tan(degToRad(latitude));
+
+    if (cosH0 > 1) return -180;
+    if (cosH0 < -1) return 360;
     return radToDeg(Math.acos(cosH0));
   }
 
@@ -669,8 +680,8 @@ export default class CelestialBody {
     const dayProgressDegree = this.getDegreeAfterMidnight(long);
     const dayProgress = (dayProgressDegree / 360) * 100;
     const solarAltDeg = 90 - this.getZenithDegree(lat, long);
-    const daytimeDuration = ((sunriseHourAngle * 2) / 360) * this.lengthOfDay;
-    const nighttimeDuration = (1 - (sunriseHourAngle * 2) / 360) * this.lengthOfDay;
+    const daytimeDuration = Math.max(Math.min((sunriseHourAngle * 2) / 360, 1), 0) * this.lengthOfDay;
+    const nighttimeDuration = Math.max(Math.min(1 - (sunriseHourAngle * 2) / 360, 1), 0)  * this.lengthOfDay;
 
     const timeUntilNoon = this.getHoursUntilDegreeAfterNoon(long, 0);
     const timeUntilMidnight = this.getHoursUntilDegreeAfterNoon(long, 180);
