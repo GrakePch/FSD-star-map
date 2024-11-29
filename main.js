@@ -28,7 +28,7 @@ const controls = Ctrls.controls;
 // zeroLevel.rotateX(Math.PI / 2);
 // scene.add(zeroLevel);
 
-camera.position.set(0, 70000000, -50000000);
+camera.position.set(0, 70000000, 50000000);
 controls.update();
 
 /* Ambient light */

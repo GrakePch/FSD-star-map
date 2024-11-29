@@ -160,7 +160,7 @@ export default class CelestialBody {
   }
 
   #createMeshSphere(color, emissive) {
-    const geometry = new THREE.SphereGeometry(this.bodyRadius, 100, 50);
+    const geometry = new THREE.SphereGeometry(this.bodyRadius, 100, 50, Math.PI);
     const material = new THREE.MeshStandardMaterial({
       color: color,
       emissive: emissive ? emissive : null,
