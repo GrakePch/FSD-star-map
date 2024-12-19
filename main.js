@@ -5,6 +5,8 @@ import Ctrls from "./classes/Controls.js";
 import { getBodyByName } from "./utils.js";
 import UI from "./classes/UI.js";
 
+const hash = window.location.hash.slice(1);
+
 const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
@@ -41,7 +43,11 @@ async function init() {
 
   window.addEventListener("resize", onWindowResize);
 
-  rootBody = getBodyByName("Stanton");
+  if (hash.toLocaleLowerCase() == "pyro") {
+    rootBody = getBodyByName("Pyro");
+  } else {
+    rootBody = getBodyByName("Stanton");
+  }
   console.log(rootBody);
   rootBody.createMesh();
   rootBody.createChildrenMesh();

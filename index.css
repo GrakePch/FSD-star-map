@@ -135,7 +135,7 @@ body {
     color: #fff;
     background-color: #40404040;
     backdrop-filter: blur(4px);
-    z-index: 100;
+    z-index: 1000;
     overflow-y: auto;
 }
 
